@@ -1,0 +1,837 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, reactive } from 'vue'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import {
+  getShoppingCartApi,
+  updateCartItemApi,
+  deleteCartItemApi,
+  clearCartApi,
+  SubmitOrderApi,
+  getAddressApi,
+} from '@/api/shopping-cart'
+import type { AddressBook, Product, SubmitOrder, Store } from '@/api/types'
+import { bookApi } from '@/api/introduction'
+import { openBook } from '@/api/meta'
+import router from '@/router'
+import { Temporal } from '@js-temporal/polyfill'
+import { getProfile } from '@/api/profile'
+
+// 加载状态
+const loading = ref(false)
+const dialogVisible = ref(false)
+const isSubmitting = ref(false)
+const orderFormRef = ref<FormInstance>()
+const itemTimers = new Map<number, any>()
+const ischeck = ref(0)
+// 2. 用于存储全选操作的计时器
+let selectAllTimer: any = null
+
+const formData = reactive({
+  addressId: null as number | null,
+  paymentMethod: 'wechat', // 默认选中微信
+})
+
+const orderInfo = reactive({
+  estimatedTime: '',
+  shippingFee: 12.0,
+  totalAmount: 299.0,
+})
+
+const rules = reactive<FormRules>({
+  addressId: [{ required: true, message: '请选择收货地址', trigger: 'change' }],
+  paymentMethod: [{ required: true, message: '请选择支付方式', trigger: 'change' }],
+})
+
+const addressList = ref<AddressBook[]>([])
+
+const initMockData = () => {
+  // 自动选中默认地址
+  const defaultAddr = addressList.value.find((addr) => addr.is_default)
+  if (defaultAddr) {
+    formData.addressId = defaultAddr.id
+  }
+}
+
+const getFullAddress = (item: AddressBook) => {
+  // 拼接省市区+详细地址
+  return `${item.province_name}${item.city_name}${item.district_name} ${item.detail}`
+}
+const formatAddressForInput = (item: AddressBook) => {
+  return `${item.consignee} ${item.phone} - ${item.district_name} ${item.detail}`
+}
+
+// 店铺数据类型定义
+const store = ref<Store>({
+  id: 1,
+  name: '',
+  selected: false,
+  indeterminate: false,
+  items: [],
+})
+
+// 获取购物车数据 - 增强错误处理
+const fetchShoppingCartData = async () => {
+  loading.value = true
+  try {
+    const response = await getShoppingCartApi()
+
+    if (response.code === 1 && response.data && Array.isArray(response.data)) {
+      // 清空并重新填充数据
+      const items = response.data
+      const bookPromises = items.map((item) => bookApi(item.book_id))
+      const books = await Promise.all(bookPromises)
+
+      // 合并数据
+      store.value.items = items.map((cartItem, idx) => {
+        const bookDetail = books[idx]!.data
+        return {
+          ...bookDetail,
+          // 关键修改 1: 绑定购物车ID，方便后续更新
+          cartId: cartItem.id,
+          // 关键修改 2: 数量和选中状态都从后端取
+          quantity: cartItem.number,
+          selected: Boolean(cartItem.selected), // 确保转为布尔值
+
+          // 其他前端字段
+          specifications: ['默认规格'],
+          freeShipping: cartItem.amount > 10,
+          guarantee: true,
+          stock: bookDetail?.stock ?? 100,
+        }
+      })
+      refreshStoreState()
+    } else {
+      ElMessage.error(response.message)
+    }
+  } catch (error) {
+    console.error('获取借阅车数据失败:', error)
+    ElMessage.error('网络错误，请稍后重试')
+    // 错误时清空数据
+    store.value.items = []
+  } finally {
+    loading.value = false
+  }
+}
+
+const fetchAddressData = async () => {
+  const res = await getAddressApi()
+  if (res.code === 1) {
+    console.log(res.data)
+    addressList.value = res.data
+  } else {
+    ElMessage.error('获取失败')
+  }
+}
+
+// 计算属性 - 所有商品列表
+const cartItems = computed<Product[]>(() => {
+  return store.value.items
+})
+
+// 计算属性 - 选中商品数量
+const selectedCount = computed(() => {
+  return cartItems.value.filter((item: Product) => item.selected).length
+})
+
+// 计算属性 - 总价格
+const totalPrice = computed(() => {
+  return cartItems.value
+    .filter((item: Product) => item.selected)
+    .reduce((total: number, item: Product) => total + item.price * item.quantity, 0)
+})
+
+// 方法 - 更新店铺的不确定状态
+const updateStoreIndeterminate = () => {
+  if (!store.value) return
+
+  const items = store.value.items
+  const total = items.length
+  // 统计已选中的数量
+  const selectedCount = items.filter((item) => item.selected).length
+
+  // 逻辑：如果选中的数量等于总数，且总数大于0，则为全选
+  store.value.selected = selectedCount === total && total > 0
+
+  // 逻辑：如果选中数大于0 且 小于总数，则为半选状态
+  store.value.indeterminate = selectedCount > 0 && selectedCount < total
+}
+const refreshStoreState = () => {
+  const items = store.value.items
+  const total = items.length
+  // 计算已选中的数量
+  const selectedCount = items.filter((item) => item.selected).length
+
+  // 全选条件：所有都被选中 且 列表不为空
+  store.value.selected = selectedCount === total && total > 0
+  // 半选条件：选中数大于0 且 小于总数
+  store.value.indeterminate = selectedCount > 0 && selectedCount < total
+}
+
+const handleItemSelectChange = async (item: Product) => {
+  updateStoreIndeterminate()
+  if (itemTimers.has(item.id)) {
+    clearTimeout(itemTimers.get(item.id))
+  }
+  // B. 发送请求给后端
+  // 3. 设定一个新的计时器 (比如 1000ms 后执行)
+  const timer = setTimeout(async () => {
+    try {
+      console.log(`[防抖结束] 正在向后端同步商品ID: ${item.id}, 状态: ${item.selected}`)
+
+      // TODO: 这里调用你的真实接口
+      // await updateCartItemApi({ id: item.cartId, selected: item.selected })
+
+      // 请求成功后，从 Map 中移除该计时器记录
+      itemTimers.delete(item.id)
+    } catch (error) {
+      console.error('同步失败', error)
+      // 如果后端报错，可能需要在这里把 item.selected 改回去，并提示用户
+    }
+  }, 1000) // <--- 设置延迟时间，这里是 1 秒
+
+  // 4. 将计时器存入 Map
+  itemTimers.set(item.id, timer)
+}
+// 3. 店铺全选/取消全选
+const handleSelectAllChange = async (val: boolean) => {
+  if (!store.value) return
+
+  // A. 前端视觉立即更新（循环设置所有商品）
+  store.value.items.forEach((item) => {
+    item.selected = val
+  })
+  // B. 更新半选状态 UI
+  updateStoreIndeterminate()
+  if (itemTimers.size > 0) {
+    itemTimers.forEach((timer) => clearTimeout(timer))
+    itemTimers.clear()
+  }
+  if (selectAllTimer) {
+    clearTimeout(selectAllTimer)
+  }
+  // C. 发送请求给后端 (这里是你需要新增的逻辑)
+  selectAllTimer = setTimeout(async () => {
+    try {
+      console.log(`[防抖结束] 正在向后端同步全选状态: ${val}`)
+
+      // TODO: 调用批量修改接口
+      // await updateCartBatchApi({ selected: val })
+    } catch (error) {
+      console.error('全选同步失败', error)
+      // 失败回滚逻辑...
+    } finally {
+      selectAllTimer = null
+    }
+  }, 1000) // <--- 延迟 1 秒
+}
+
+// 方法 - 处理数量变化（调用API）
+const handleQuantityChange = async (item: Product) => {
+  if (item.quantity < 1) item.quantity = 1
+  if (item.quantity > item.stock) item.quantity = item.stock
+
+  try {
+    const response = await updateCartItemApi({
+      book_id: item.id,
+      number: item.quantity,
+    })
+
+    if (response.code === 1) {
+      ElMessage.success(`已更新 ${item.name} 的数量`)
+    } else {
+      ElMessage.error(response.message)
+      // 失败时重新获取数据恢复状态
+      await fetchShoppingCartData()
+    }
+  } catch (error) {
+    console.error('更新数量失败:', error)
+    ElMessage.error('更新失败，请稍后重试')
+    await fetchShoppingCartData()
+  }
+}
+
+// 方法 - 删除商品（调用API）
+const removeItem = async (id: number) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这个书籍吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+
+    const response = await deleteCartItemApi(id)
+
+    if (response.code === 1) {
+      // 删除成功后重新获取数据
+      console.log('删除书籍成功，刷新数据', response)
+      await fetchShoppingCartData()
+    } else {
+      ElMessage.error(response.message)
+    }
+  } catch {
+    ElMessage.info('已取消删除')
+  }
+}
+
+// 方法 - 清空购物车（调用API）
+const clearCart = async () => {
+  if (cartItems.value.length === 0) {
+    ElMessage.warning('借阅车已经是空的')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm('确定要清空借阅车吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+
+    const response = await clearCartApi()
+
+    if (response.code === 1) {
+      store.value.items = []
+      ElMessage.success('购借阅已清空')
+    } else {
+      ElMessage.error(response.message)
+    }
+  } catch {
+    ElMessage.info('已取消清空操作')
+  }
+}
+
+const checkProfile = async () => {
+  const loginUserStr = localStorage.getItem('login_user')
+  if (loginUserStr) {
+    const loginUser = JSON.parse(loginUserStr)
+    if (loginUser && loginUser.id) {
+      try {
+        const res = await getProfile(loginUser.id)
+        console.log(res)
+        if (res.code === 1) {
+          if (res.data.phone === null) {
+            ElMessage.error('您的个人信息不完整，请先完善个人信息')
+          } else {
+            ischeck.value = 1
+          }
+        } else {
+          ElMessage.error(res.message || '获取用户信息失败')
+        }
+      } catch (error) {
+        console.error(error)
+      }
+    }
+  }
+}
+
+// 方法 - 处理结算
+const handleCheckout = async () => {
+  if (selectedCount.value === 0) {
+    ElMessage.warning('请选择要结算的书籍')
+    return
+  }
+  await checkProfile()
+  if (ischeck.value !== 1) {
+    return
+  }
+
+  const now = Temporal.Now.plainDateTimeISO().toString({ smallestUnit: 'second' }).replace('T', ' ')
+  orderInfo.estimatedTime = now.toString()
+  console.log(orderInfo.estimatedTime)
+  dialogVisible.value = true
+  orderInfo.totalAmount = totalPrice.value + orderInfo.shippingFee
+}
+const submitOrder = async () => {
+  if (!orderFormRef.value) return
+
+  // 1. 校验表单
+  await orderFormRef.value.validate(async (valid) => {
+    if (valid) {
+      isSubmitting.value = true // 开启加载状态
+      const payMethodMap: Record<string, number> = {
+        wechat: 1,
+        alipay: 2,
+      }
+      const requestData: SubmitOrder = {
+        address_book_id: formData.addressId!, // 使用 ! 断言，因为通过 validate 校验后一定不为空
+        pay_method: payMethodMap[formData.paymentMethod] ?? 1,
+        estimated_delivery_time: orderInfo.estimatedTime,
+        shipping_fee: orderInfo.shippingFee,
+        amount: orderInfo.totalAmount,
+      }
+      console.log('提交借阅数据:', requestData)
+      const res = await SubmitOrderApi(requestData)
+      if (res.code === 1) {
+        setTimeout(() => {
+          isSubmitting.value = false
+          dialogVisible.value = false
+          location.reload()
+
+          // 此处可以添加跳转逻辑
+        }, 1500)
+        ElMessage.success('借阅请求提交成功，后续可在图书管理中查看相关信息')
+      } else {
+        ElMessage.error(res.message || '请求提交失败，请重试')
+        isSubmitting.value = false
+        return
+      }
+    } else {
+      ElMessage.warning('请检查输入信息是否完整')
+    }
+  })
+}
+
+// 生命周期
+onMounted(() => {
+  console.log('购物车组件已加载')
+  initMockData()
+  fetchAddressData()
+  fetchShoppingCartData()
+})
+</script>
+<template>
+  <div class="shopping-cart">
+    <!-- 顶部标题栏 -->
+    <div class="cart-header">
+      <span class="selected-count">已选 {{ selectedCount }} 件图书</span>
+    </div>
+
+    <!-- 购物车内容区域 -->
+    <el-card class="cart-container">
+      <!-- 表头 -->
+      <template #header>
+        <el-row :gutter="24" align="middle">
+          <el-col :span="2">
+            <el-checkbox
+              v-model="store.selected"
+              :indeterminate="store.indeterminate"
+              @change="handleSelectAllChange"
+              >全选
+            </el-checkbox>
+          </el-col>
+          <el-col :span="16">图书</el-col>
+          <el-col class="head-label" :span="3">数量</el-col>
+          <el-col class="head-label" :span="3">操作</el-col>
+        </el-row>
+      </template>
+
+      <!-- 店铺商品列表 -->
+      <div class="store-items">
+        <el-card
+          v-for="item in store.items"
+          :key="item.id"
+          class="cart-item"
+          :class="{ selected: item.selected }"
+          shadow="hover"
+        >
+          <el-row :gutter="24" align="middle">
+            <!-- 选择框 -->
+            <el-col :span="2">
+              <el-checkbox v-model="item.selected" @change="() => handleItemSelectChange(item)" />
+            </el-col>
+
+            <!-- 商品信息 -->
+            <el-col class="item-info" :span="16">
+              <el-row>
+                <el-image
+                  :src="item.image"
+                  class="product-image"
+                  fit="contain"
+                  @click="openBook(item.id)"
+                  style="cursor: pointer"
+                />
+
+                <div class="item-details">
+                  <h4 class="product-name">{{ item.name }}</h4>
+                  <div class="product-specs">
+                    <span class="spec" v-for="spec in item.specifications" :key="spec">
+                      {{ spec }}
+                    </span>
+                  </div>
+                </div>
+              </el-row>
+            </el-col>
+
+
+            <!-- 数量控制 -->
+            <el-col class="item-quantity" :span="3" style="margin-top: 20px">
+              <el-input-number
+                v-model="item.quantity"
+                :min="1"
+                :max="item.stock > 99 ? 99 : item.stock"
+                size="small"
+                controls-position="right"
+                @change="() => handleQuantityChange(item)"
+              />
+              <div class="stock-info">库存 {{ item.stock }} 件</div>
+            </el-col>
+
+
+            <!-- 操作按钮 -->
+            <el-col class="item-actions" :span="3">
+              <el-button link type="danger" size="small" @click="() => removeItem(item.id)">
+                删除
+              </el-button>
+            </el-col>
+          </el-row>
+        </el-card>
+      </div>
+
+      <!-- 空购物车状态 -->
+      <div v-if="cartItems.length === 0" class="empty-cart">
+        <el-empty description="借阅车空空如也">
+          <el-button type="primary" @click="router.push('/')">去借阅</el-button>
+        </el-empty>
+      </div>
+    </el-card>
+  </div>
+  <el-dialog
+    v-model="dialogVisible"
+    title="确认订单"
+    width="500px"
+    destroy-on-close
+    :close-on-click-modal="false"
+  >
+    <el-descriptions :column="1" border class="mb-4">
+      <el-descriptions-item label="借阅时间">
+        <el-tag type="info">{{ orderInfo.estimatedTime }}</el-tag>
+      </el-descriptions-item>
+      <el-descriptions-item label="归还时间">
+        <el-tag type="info">{{ orderInfo.estimatedTime }}</el-tag>
+      </el-descriptions-item>
+
+    </el-descriptions>
+
+    <el-divider />
+
+    <el-form
+      ref="orderFormRef"
+      :model="formData"
+      :rules="rules"
+      label-width="80px"
+      label-position="top"
+    >
+
+    </el-form>
+
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitOrder" :loading="isSubmitting">
+          借阅
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
+  <!-- 底部悬浮结算栏 -->
+  <el-affix
+    position="bottom"
+    :offset="0"
+    v-if="cartItems.length > 0"
+    style="width: 80%; margin: 0 auto"
+  >
+    <div class="footer-content">
+      <div class="footer-left">
+        <el-checkbox
+          v-model="store.selected"
+          :indeterminate="store.indeterminate"
+          @change="handleSelectAllChange"
+        >
+          全选
+        </el-checkbox>
+        <el-button link type="danger" @click="clearCart"> 清空借阅车 </el-button>
+      </div>
+
+      <div class="footer-right">
+        <div class="price-line">
+          <span>已选 {{ selectedCount }} 本书籍</span>
+        </div>
+
+        <el-button
+          type="warning"
+          size="large"
+          class="checkout-btn"
+          :disabled="selectedCount === 0"
+          @click="handleCheckout"
+        >
+          去借阅 ({{ selectedCount }})
+        </el-button>
+      </div>
+    </div>
+  </el-affix>
+</template>
+
+<style scoped>
+.shopping-cart {
+  max-width: 80%;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
+  min-height: 100vh;
+}
+
+.cart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-left: 30px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.cart-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.selected-count {
+  color: #666;
+  font-size: 14px;
+}
+
+.cart-container {
+  margin-bottom: 100px;
+  padding-bottom: 20px;
+}
+
+.head-label {
+  text-align: center;
+}
+
+.store-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.store-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.store-action {
+  margin-left: 8px;
+}
+
+.store-promotion {
+  display: flex;
+  align-items: center;
+}
+
+.store-items {
+  background-color: #fff;
+}
+
+.store-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 20px;
+  background-color: #fafafa;
+  border-top: 1px solid #e8e8e8;
+}
+
+.store-total {
+  font-size: 14px;
+  color: #666;
+}
+
+.store-total-price {
+  font-size: 16px;
+  color: #ff5000;
+  font-weight: bold;
+  margin: 0 4px;
+}
+
+.store-discount {
+  color: #52c41a;
+  font-size: 12px;
+}
+
+.cart-item {
+  margin-bottom: 10px;
+}
+
+.item-content {
+  display: grid;
+  grid-template-columns: 60px 1fr 120px 140px 120px 100px;
+  gap: 15px;
+  padding: 20px;
+  align-items: center;
+}
+
+.item-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.product-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+}
+
+.item-details {
+  flex: 1;
+}
+
+.product-name {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #333;
+}
+
+.product-specs {
+  margin-bottom: 8px;
+}
+
+.spec {
+  display: inline-block;
+  background: #f5f5f5;
+  padding: 2px 6px;
+  margin-right: 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: #666;
+}
+
+.product-tags {
+  display: flex;
+  gap: 5px;
+}
+
+.item-price {
+  text-align: center;
+}
+
+.current-price {
+  display: block;
+  font-size: 16px;
+  color: #ff5000;
+  font-weight: bold;
+}
+
+.original-price {
+  display: block;
+  font-size: 12px;
+  color: #999;
+  text-decoration: line-through;
+  margin-top: 4px;
+}
+
+.item-quantity {
+  text-align: center;
+}
+
+.stock-info {
+  font-size: 12px;
+  color: #999;
+  margin-top: 5px;
+}
+
+.item-subtotal {
+  text-align: center;
+}
+
+.subtotal-amount {
+  display: block;
+  font-size: 16px;
+  color: #ff5000;
+  font-weight: bold;
+}
+
+.discount-info {
+  font-size: 12px;
+  color: #52c41a;
+  margin-top: 4px;
+}
+
+.item-actions {
+  text-align: center;
+}
+
+.option-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.option-top {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #303133;
+}
+
+.option-bottom {
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.4;
+  /* 超出省略号 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty-cart {
+  padding: 60px 0;
+  text-align: center;
+}
+
+.footer-content {
+  max-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.price-line {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.total-label {
+  font-weight: 500;
+}
+
+.total-price {
+  font-size: 24px;
+  color: #ff5000;
+  font-weight: bold;
+}
+
+.discount-line {
+  font-size: 12px;
+  color: #52c41a;
+}
+
+.checkout-btn {
+  min-width: 120px;
+  height: 40px;
+  font-size: 16px;
+}
+</style>
