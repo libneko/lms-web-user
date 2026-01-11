@@ -28,10 +28,6 @@ const rules = computed<FormRules>(() => {
   return {
     username: [{ max: 30, message: '用户名不超过30个字符', trigger: 'blur' }],
 
-    // 1. 邮箱：只有点击了编辑邮箱(isEmailEditing为真)才校验，否则为空数组(不校验)
-    email: isEmailEditing.value
-      ? [{ required: true, validator: validateEmail, trigger: 'blur' }]
-      : [],
 
     // 2. 手机号：只有点击了编辑手机号才校验
     phone: isPhoneEditing.value

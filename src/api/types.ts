@@ -128,7 +128,7 @@ export interface Product extends Book {
   cartId: number
 }
 
-// 定义店铺类型
+
 export interface Store {
   id: number
   name: string
@@ -193,31 +193,8 @@ export interface PayInfo {
   payMethod: number
 }
 
-// 地址管理相关类型
-export interface AddressBook {
-  id: number
-  user_id: number
-  consignee: string
-  phone: string
-  sex: number
-  province_code: string
-  province_name: string
-  city_code: string
-  city_name: string
-  district_code: string
-  district_name: string
-  detail: string
-  label: string
-  is_default: boolean
-}
 
-export interface SubmitOrder {
-  address_book_id: number
-  pay_method: number
-  estimated_delivery_time: string
-  shipping_fee: number
-  amount: number
-}
+
 
 export interface OrderPesponse {
   id: number

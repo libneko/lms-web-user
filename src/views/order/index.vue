@@ -6,12 +6,12 @@ import {
 } from '@/api/order'
 import type { Order, SendOrder } from '@/api/types'
 import { OrderStatus, OrderStatusMap } from '@/utils/status'
-import { ElMessage, ElMessageBox, type CollapseModelValue } from 'element-plus'
+import { ElMessage, type CollapseModelValue } from 'element-plus'
 import { computed, onMounted, ref, watch } from 'vue'
 
 const dialogVisible = ref(false)
 const currentPage = ref(1) // 当前页码
-const pageSize = ref(5) // 每页显示数量 (设小一点方便看效果)
+const pageSize = ref(5) // 每页显示数量
 const searchQuery = ref('')
 const total = ref(0)
 const currentOrder = ref<Order | null>(null) // 存储当前点击的订单数据
@@ -33,7 +33,7 @@ const handleCurrentChange = (val: number) => {
 const handleSizeChange = (val: number) => {
   console.log(`每页 ${val} 条`)
   pageSize.value = val
-  currentPage.value = 1 // 改变每页大小时，建议重置回第一页
+  currentPage.value = 1 // 改变每页大小时，重置回第一页
   fetchOrders()
 }
 
@@ -64,7 +64,7 @@ const checkRenewDisabled = (item: any) => {
 
   const deadline = new Date(item.due_date).getTime()
   const now = Date.now()
-  // 计算剩余时间 (毫秒)
+
   const diff = deadline - now
   
   const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000
@@ -154,7 +154,6 @@ watch(searchQuery, () => {
 
 onMounted(async () => {
   await fetchOrders()
-  //  const orders= await OrderApi()
 })
 </script>
 
@@ -167,7 +166,6 @@ onMounted(async () => {
       <template #header>
         <el-row :gutter="24" align="middle">
           <el-col :span="2"></el-col>
-          <!-- <el-col :span="10">图书</el-col> -->
           <el-col :span="10">订单</el-col>
           <el-col class="head-label" :span="3"></el-col>
           <el-col class="head-label" :span="3">状态</el-col>
@@ -245,7 +243,7 @@ onMounted(async () => {
               </el-button>
             </el-col>
             <el-col class="order-time" :span="3">
-              <span style="font-size: 13px; color: #999">{{ order.borrow_time }}</span>
+              <span style="font-size: 13px; color: #999">{{ formatTime(order.borrow_time) }}</span>
             </el-col>
           </el-row>
           <el-collapse
@@ -302,7 +300,7 @@ onMounted(async () => {
     <el-dialog v-model="dialogVisible" title="订单详情" width="700px" destroy-on-close>
       <div v-if="currentOrder">
         <div
-          v-if="currentOrder.status === OrderStatus.PENDING_PAYMENT"
+          v-if="currentOrder.status === OrderStatus.OVERDUE"
           style="margin-bottom: 20px; color: #909399; text-align: center"
         >
           <el-steps :active="2" simple style="margin-bottom: 20px">

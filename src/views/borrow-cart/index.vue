@@ -8,7 +8,7 @@ import {
   clearCartApi,
   SubmitOrderApi,
 } from '@/api/shopping-cart'
-import type { Product, SubmitOrder, Store, temp } from '@/api/types'
+import type { Product, Store, temp } from '@/api/types'
 import { bookApi } from '@/api/introduction'
 import { openBook } from '@/api/meta'
 import router from '@/router'
@@ -19,29 +19,14 @@ import { getProfile } from '@/api/profile'
 const loading = ref(false)
 const dialogVisible = ref(false)
 const isSubmitting = ref(false)
-const orderFormRef = ref<FormInstance>()
 const itemTimers = new Map<number, any>()
 const ischeck = ref(0)
 const tempp = ref<temp>()
 // 2. 用于存储全选操作的计时器
 let selectAllTimer: any = null
 
-const formData = reactive({
-  addressId: null as number | null,
-  paymentMethod: 'wechat', // 默认选中微信
-})
-
-const orderInfo = reactive({
-  estimatedTime: '',
-  shippingFee: 12.0,
-  totalAmount: 299.0,
-})
 
 
-
-
-
-// 店铺数据类型定义
 const store = ref<Store>({
   id: 1,
   name: '',
@@ -300,7 +285,7 @@ const handleCheckout = async () => {
       dialogVisible.value = false
       location.reload()
 
-      // 此处可以添加跳转逻辑
+
     }, 1500)
     ElMessage.success('借阅请求提交成功，后续可在图书管理中查看相关信息')
   } else {
@@ -344,7 +329,7 @@ onMounted(() => {
         </el-row>
       </template>
 
-      <!-- 店铺商品列表 -->
+      <!-- 书籍列表 -->
       <div class="store-items">
         <el-card
           v-for="item in store.items"
@@ -406,7 +391,7 @@ onMounted(() => {
         </el-card>
       </div>
 
-      <!-- 空购物车状态 -->
+      <!-- 空借阅车状态 -->
       <div v-if="cartItems.length === 0" class="empty-cart">
         <el-empty description="借阅车空空如也">
           <el-button type="primary" @click="router.push('/')">去借阅</el-button>

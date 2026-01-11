@@ -140,7 +140,6 @@ onMounted(async () => {
     </div>
     <div class="result-list" v-if="isSearched">
       <el-row class="book-lists" :gutter="20">
-        <!-- 每个 <el-col> 用来显示一个书本的相关信息 -->
         <el-col
           v-for="(book, _index) in bookList"
           :key="book.id"

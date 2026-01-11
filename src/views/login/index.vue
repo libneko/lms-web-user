@@ -185,7 +185,6 @@ onBeforeUnmount(() => {
     <el-button class="button" type="primary" @click="login">登 录</el-button>
 
     <div class="auth-hints" v-if="activeTab === 'password'">
-      <!--       <a href="#" class="left" @click="forgot">忘记密码</a> -->
       <a href="#" class="right register" @click="register">立即注册</a>
     </div>
   </AuthLayout>

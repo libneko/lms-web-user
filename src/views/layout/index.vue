@@ -5,7 +5,6 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import NavMenu from '@/component/nav-menu.vue'
 
-// 当前登录的员工
 const login_user = ref<LoginToken | null>(null)
 const router = useRouter()
 
@@ -50,10 +49,6 @@ const profile = () => {
   window.open('/profile', '_blank')
 }
 
-//地址管理界面
-const addressManagement = () => {
-  window.open('/address', '_blank')
-}
 
 // 外观子菜单逻辑
 const isAppearanceOpen = ref(false)
