@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import { bookApi } from '@/api/introduction'
 import type { BookData, Book } from '@/api/types'
 import { ref, onMounted } from 'vue'
-import { addborrowCartApi } from '@/api/borrow-cart'
+import { addborrowCartApi, getborrowCartApi } from '@/api/borrow-cart'
 
 const props = defineProps<{ id: number }>()
 
@@ -14,6 +14,8 @@ let borrowItem = ref<BookData>({
   number: 1,
 })
 let book_id: number
+const count = ref(1)
+
 
 const num = ref(1)
 
@@ -32,6 +34,7 @@ const addToBorrowCart = async (book: BookData) => {
   // 成功提示
   if (res.code !== 0) {
     console.log('加入成功:', res)
+    count.value = count.value + 1
     ElMessage.success('已加入借阅车')
   } else {
     ElMessage.error('加入失败')
@@ -77,7 +80,7 @@ const handleChange = (value: number) => {
           </div>
           <div class="books-buy">
             
-            <el-button type="primary" @click="addToBorrowCart(borrowItem)">加入借阅车</el-button>
+            <el-button type="primary" :disabled="(book?.stock ?? 0) <= 0 || count > (book?.stock ?? 0)" @click="addToBorrowCart(borrowItem)">加入借阅车</el-button>
           </div>
         </div>
       </div>
