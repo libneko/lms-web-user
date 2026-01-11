@@ -23,16 +23,13 @@ onMounted(async () => {
   const res = await bookApi(props.id)
   console.log(res)
   if (res.code === 0) {
-    ElMessage.error("该书籍已被借完或者下架")
+    ElMessage.error('该书籍已被借完或者下架')
     router.push('/')
-  }
-  else { 
-    
+  } else {
     book.value = res.data
     book_id = book.value.id
     borrowItem.value.book_id = book_id
   }
-
 })
 
 const addToBorrowCart = async (book: BookData) => {

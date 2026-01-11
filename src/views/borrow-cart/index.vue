@@ -3,12 +3,11 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
   getborrowCartApi,
-  updateCartItemApi,
   deleteCartItemApi,
   clearCartApi,
   SubmitOrderApi,
 } from '@/api/borrow-cart'
-import type { Product, Store } from '@/api/types'
+import type { BorrowList, Product, Store } from '@/api/types'
 import { bookApi } from '@/api/introduction'
 import { openBook } from '@/api/meta'
 import router from '@/router'
@@ -20,6 +19,7 @@ const dialogVisible = ref(false)
 const isSubmitting = ref(false)
 const itemTimers = new Map<number, any>()
 const ischeck = ref(0)
+const list = ref<BorrowList[]>([])
 // 2. 用于存储全选操作的计时器
 let selectAllTimer: any = null
 
@@ -241,8 +241,14 @@ const handleCheckout = async () => {
   }
   await checkProfile()
   if (ischeck.value === 0) return
-
-  const res = await SubmitOrderApi()
+  const selectedIds = store.value.items
+    .filter((item: any) => item.selected) // 筛选出打钩的 (根据你的实际字段 selected 或 isChecked 修改)
+    .map((item: any) => item.id) // 只提取 id 字段
+  console.log(selectedIds)
+  const submitData: BorrowList = {
+    book_ids: selectedIds,
+  }
+  const res = await SubmitOrderApi(submitData)
   if (res.code === 1) {
     setTimeout(() => {
       isSubmitting.value = false

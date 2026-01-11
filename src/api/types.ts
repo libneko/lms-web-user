@@ -181,3 +181,7 @@ export interface BorrowResponse {
   borrow_number: string
   borrow_time: string
 }
+
+export interface BorrowList {
+  book_ids: string[]
+}
