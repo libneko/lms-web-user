@@ -61,7 +61,7 @@ const fetchborrowCartData = async () => {
       ElMessage.error(response.message)
     }
   } catch (error) {
-    console.error('获取借阅车数据失败:', error)
+    console.error('获取书单数据失败:', error)
     ElMessage.error('网络错误，请稍后重试')
     // 错误时清空数据
     store.value.items = []
@@ -182,15 +182,15 @@ const removeItem = async (id: number) => {
   }
 }
 
-// 方法 - 清空借阅车（调用API）
+// 方法 - 清空书单（调用API）
 const clearCart = async () => {
   if (cartItems.value.length === 0) {
-    ElMessage.warning('借阅车已经是空的')
+    ElMessage.warning('书单已经是空的')
     return
   }
 
   try {
-    await ElMessageBox.confirm('确定要清空借阅车吗？', '提示', {
+    await ElMessageBox.confirm('确定要清空书单吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning',
@@ -200,7 +200,7 @@ const clearCart = async () => {
 
     if (response.code === 1) {
       store.value.items = []
-      ElMessage.success('借阅车已清空')
+      ElMessage.success('书单已清空')
     } else {
       ElMessage.error(response.message)
     }
@@ -259,7 +259,7 @@ const handleCheckout = async () => {
 
 // 生命周期
 onMounted(() => {
-  console.log('借阅车组件已加载')
+  console.log('书单组件已加载')
   fetchborrowCartData()
 })
 </script>
@@ -270,7 +270,7 @@ onMounted(() => {
       <span class="selected-count">已选 {{ selectedCount }} 件图书</span>
     </div>
 
-    <!-- 借阅车内容区域 -->
+    <!-- 书单内容区域 -->
     <el-card class="cart-container">
       <!-- 表头 -->
       <template #header>
@@ -341,9 +341,9 @@ onMounted(() => {
         </el-card>
       </div>
 
-      <!-- 空借阅车状态 -->
+      <!-- 空书单状态 -->
       <div v-if="cartItems.length === 0" class="empty-cart">
-        <el-empty description="借阅车空空如也">
+        <el-empty description="书单空空如也">
           <el-button type="primary" @click="router.push('/')">去借阅</el-button>
         </el-empty>
       </div>
@@ -365,7 +365,7 @@ onMounted(() => {
         >
           全选
         </el-checkbox>
-        <el-button link type="danger" @click="clearCart"> 清空借阅车 </el-button>
+        <el-button link type="danger" @click="clearCart"> 清空书单 </el-button>
       </div>
 
       <div class="footer-right">
@@ -380,7 +380,7 @@ onMounted(() => {
           :disabled="selectedCount === 0"
           @click="handleCheckout"
         >
-          去借阅 ({{ selectedCount }})
+          借阅 ({{ selectedCount }})
         </el-button>
       </div>
     </div>

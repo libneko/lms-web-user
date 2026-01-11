@@ -27,6 +27,7 @@ request.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       // 提示
+      console.log(error)
       ElMessage.error('登录超时，请重新登录')
       // 跳转到登录界面
       router.push('/login')

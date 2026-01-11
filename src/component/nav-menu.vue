@@ -16,7 +16,7 @@ defineEmits(['menu-click'])
         <el-icon><Search /></el-icon> 搜索
       </el-menu-item>
       <el-menu-item index="/borrow-cart">
-        <el-icon><ShoppingCart /></el-icon> 借阅车
+        <el-icon><ShoppingCart /></el-icon> 书单
       </el-menu-item>
       <el-menu-item index="/order">
         <el-icon><Document /></el-icon> 图书管理

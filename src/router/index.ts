@@ -26,7 +26,7 @@ const router = createRouter({
           path: '/borrow-cart',
           name: 'borrow-cart',
           component: BorrowCartView,
-          meta: { title: '我的借阅车' },
+          meta: { title: '我的书单' },
         },
         {
           path: '/search',
