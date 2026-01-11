@@ -79,31 +79,30 @@ export interface SendSearch {
   status: number
 }
 
-// 根据图片添加购物车相关接口
+// 借阅车相关接口
 export interface borrowCartItem {
   id: number
   name: string
   user_id: number
   book_id: number
   number: number // 数量
-  amount: number 
   image: string
   create_time: string
   selected: boolean
 }
 
-//更新购物车
-export interface UpdateCartForm {
+//更新借阅车
+export interface UpdateBorrowCartForm {
   book_id: number
   number: number
 }
 
-//删除商品
-export interface ShoppingDeleteForm {
+//删除借阅车书籍
+export interface BorrowCartDeleteForm {
   id: number
 }
 
-export interface SendOrder {
+export interface SendBorrowQuery {
   page: number
   pageSize: number
   status?: number | null
@@ -122,12 +121,9 @@ export interface Product extends Book {
   quantity: number
   selected: boolean
   specifications: string[]
-  freeShipping: boolean
-  guarantee: boolean
   stock: number
   cartId: number
 }
-
 
 export interface Store {
   id: number
@@ -151,24 +147,23 @@ export interface items {
   book_id: number
   title: string
   quantity: number
-  price: number
 }
 
-export interface Order {
+export interface BorrowRecord {
   id: number
   number: string
   status: number
   user_id: number
   borrow_time: string
-  renew_count:number
+  renew_count: number
   due_date: string
   user_name: string
   return_time: string
   borrow_books: string
-  borrow_detail_list: OrderDetail[]
+  borrow_detail_list: BorrowDetail[]
 }
 
-export interface OrderDetail {
+export interface BorrowDetail {
   id: number
   name: string
   borrow_record_id: number
@@ -176,9 +171,9 @@ export interface OrderDetail {
   number: number
   image: string
 }
-export interface GetOrders {
+export interface GetBorrowRecords {
   total: number
-  records: Order[]
+  records: BorrowRecord[]
 }
 
 export interface Notice {
@@ -188,20 +183,8 @@ export interface Notice {
   create_time: string
 }
 
-export interface PayInfo {
-  order_number: string
-  payMethod: number
-}
-
-
-
-
-export interface OrderPesponse {
+export interface BorrowResponse {
   id: number
   borrow_number: string
-  borrow_time:string
-}
-
-export interface temp{
-  
+  borrow_time: string
 }

@@ -160,7 +160,7 @@ onMounted(async () => {
                   <p>{{ book?.description }}</p>
                 </el-row>
                 <el-row :span="24" class="">
-                  <p>所在位置：{{ book?.location}}</p>
+                  <p>所在位置：{{ book?.location }}</p>
                 </el-row>
               </el-col>
             </el-row>

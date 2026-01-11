@@ -3,13 +3,13 @@ import { ElMessage } from 'element-plus'
 import { bookApi } from '@/api/introduction'
 import type { BookData, Book } from '@/api/types'
 import { ref, onMounted } from 'vue'
-import { addborrowCartApi } from '@/api/shopping-cart'
+import { addborrowCartApi } from '@/api/borrow-cart'
 
 const props = defineProps<{ id: number }>()
 
 let book = ref<Book>()
 
-let shopp = ref<BookData>({
+let borrowItem = ref<BookData>({
   book_id: 0,
   number: 1,
 })
@@ -22,10 +22,10 @@ onMounted(async () => {
   console.log(res)
   book.value = res.data
   book_id = book.value.id
-  shopp.value.book_id = book_id
+  borrowItem.value.book_id = book_id
 })
 
-const addShopping = async (book: BookData) => {
+const addToBorrowCart = async (book: BookData) => {
   console.log(book)
   const res = await addborrowCartApi(book)
   console.log(res)
@@ -40,7 +40,7 @@ const addShopping = async (book: BookData) => {
 
 const handleChange = (value: number) => {
   console.log(value)
-  shopp.value.number = value
+  borrowItem.value.number = value
 }
 </script>
 
@@ -68,9 +68,7 @@ const handleChange = (value: number) => {
               <p>出版社: {{ book?.publisher }}</p>
             </div>
           </div>
-          <div class="books-col1-row2">
-
-          </div>
+          <div class="books-col1-row2"></div>
         </div>
         <div class="books-col2">
           <div class="books-intro">
@@ -79,7 +77,7 @@ const handleChange = (value: number) => {
           </div>
           <div class="books-buy">
             <el-input-number v-model="num" :min="1" :max="book?.stock" @change="handleChange" />
-            <el-button type="primary" @click="addShopping(shopp)">加入借阅车</el-button>
+            <el-button type="primary" @click="addToBorrowCart(borrowItem)">加入借阅车</el-button>
           </div>
         </div>
       </div>
@@ -191,20 +189,6 @@ const handleChange = (value: number) => {
   font-weight: bold;
 }
 
-.books-col1-row2 {
-  padding-right: 5%;
-  white-space: nowrap; /* 防止价格换行 */
-}
-
-.books-price p {
-  width: 100%;
-  border-radius: 30px;
-  color: rgb(229, 94, 52);
-  font-weight: bold; /* 粗体 */
-  font-style: italic; /* 斜体 */
-  font-size: 40px; /* 使用固定大小代替百分比 */
-}
-
 .books-pic img {
   width: 100%;
   height: 100%;
@@ -246,17 +230,6 @@ const handleChange = (value: number) => {
   .books-col1-row {
     width: 100%;
     margin-bottom: 10px;
-  }
-
-  .books-col1-row2 {
-    width: 100%;
-    padding-right: 0;
-    display: flex;
-    justify-content: flex-start;
-  }
-
-  .books-price p {
-    font-size: 30px;
   }
 
   .books-buy {
@@ -308,24 +281,9 @@ const handleChange = (value: number) => {
     width: 100%;
   }
 
-  .books-col1-row2 {
-    margin-top: 15px;
-    padding-right: 0;
-    border-top: 1px dashed #eee;
-    padding-top: 10px;
-  }
-
   .books-title h2 {
     font-size: 20px;
     margin: 0;
-  }
-
-  .books-price h3 {
-    font-size: 14px;
-  }
-
-  .books-price p {
-    font-size: 24px;
   }
 
   .books-col2 {
@@ -372,14 +330,6 @@ html.dark .books-auth p,
 html.dark .books-intro p {
   color: var(--el-text-color-regular);
 }
-
-/* 针对价格进行特殊突出（通常价格保持红色或高亮色，但在深色下可能需要微调） */
-html.dark .books-price p {
-  color: var(--el-color-danger); /* 使用 Element 的红色变量 */
-  font-weight: bold;
-}
-
-/* 如果你的 books-introduction 这种小标题有背景色，也需要处理 */
 
 /* 4. 如果你的布局有边框，记得把边框变暗 */
 html.dark .books-row1,

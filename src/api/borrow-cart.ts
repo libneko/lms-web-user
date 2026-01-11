@@ -1,11 +1,10 @@
 import request from '@/utils/request'
 import type {
-  UpdateCartForm,
+  UpdateBorrowCartForm,
   borrowCartItem,
   BookData,
   ApiResponse,
-  OrderPesponse,
-  temp,
+  BorrowResponse,
 } from './types'
 
 export const addborrowCartApi = (book_id: BookData): Promise<ApiResponse<object>> => {
@@ -18,11 +17,11 @@ export const getborrowCartApi = (): Promise<ApiResponse<borrowCartItem[]>> => {
 }
 
 // 更新借阅车书籍数量
-export const updateCartItemApi = (data: UpdateCartForm): Promise<ApiResponse<any>> => {
+export const updateCartItemApi = (data: UpdateBorrowCartForm): Promise<ApiResponse<any>> => {
   return request.put('/user/borrowCart/update', data)
 }
 
-// 删除借阅车商品
+// 删除借阅车书籍
 export const deleteCartItemApi = (id: number): Promise<ApiResponse<any>> => {
   return request.delete(`/user/borrowCart/` + id)
 }
@@ -32,7 +31,6 @@ export const clearCartApi = (): Promise<ApiResponse<any>> => {
   return request.delete('/user/borrowCart/clean')
 }
 
-
-export const SubmitOrderApi = (data:temp): Promise<ApiResponse<OrderPesponse>> => {
-  return request.post('/user/borrow/borrow' , data)
+export const SubmitOrderApi = (): Promise<ApiResponse<BorrowResponse>> => {
+  return request.post('/user/borrow/borrow')
 }

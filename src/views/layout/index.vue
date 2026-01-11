@@ -49,7 +49,6 @@ const profile = () => {
   window.open('/profile', '_blank')
 }
 
-
 // 外观子菜单逻辑
 const isAppearanceOpen = ref(false)
 const currentTheme = ref<Theme>((localStorage.getItem('theme') as Theme) || Theme.SYSTEM)

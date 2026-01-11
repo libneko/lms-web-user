@@ -37,12 +37,6 @@ defineProps<{
   font-size: 14px;
 }
 
-.book-price {
-  font-size: 16px;
-  font-weight: bold;
-  color: #ff4400;
-}
-
 .book-link {
   text-decoration: none;
   color: inherit;
@@ -57,9 +51,6 @@ defineProps<{
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-  .book-price {
-    font-size: 14px;
   }
 }
 </style>

@@ -28,7 +28,6 @@ const rules = computed<FormRules>(() => {
   return {
     username: [{ max: 30, message: '用户名不超过30个字符', trigger: 'blur' }],
 
-
     // 2. 手机号：只有点击了编辑手机号才校验
     phone: isPhoneEditing.value
       ? [{ required: true, validator: validatePhone, trigger: 'blur' }]

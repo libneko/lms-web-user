@@ -1,7 +1,6 @@
 import request from '@/utils/request'
 import type { ApiResponse, SendSearch, ReceiveSearch } from './types'
 
-
 export const searchApi = (data: SendSearch): Promise<ApiResponse<ReceiveSearch>> => {
   const params = new URLSearchParams()
   params.append('page', data.page.toString())

@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import {
-  CompleteOrderApi,
-  getOrder,
-  ReminderOrderApi,
-} from '@/api/order'
-import type { Order, SendOrder } from '@/api/types'
-import { OrderStatus, OrderStatusMap } from '@/utils/status'
+import { completeBorrowApi, getBorrowRecords, renewBorrowApi } from '@/api/borrow'
+import type { BorrowRecord, SendBorrowQuery } from '@/api/types'
+import { BorrowStatus, BorrowStatusMap } from '@/utils/status'
 import { ElMessage, type CollapseModelValue } from 'element-plus'
 import { computed, onMounted, ref, watch } from 'vue'
 
@@ -14,11 +10,9 @@ const currentPage = ref(1) // 当前页码
 const pageSize = ref(5) // 每页显示数量
 const searchQuery = ref('')
 const total = ref(0)
-const currentOrder = ref<Order | null>(null) // 存储当前点击的订单数据
+const currentBorrow = ref<BorrowRecord | null>(null) // 存储当前点击的借阅记录
 const activeNames = ref<number[]>([])
 let timer: any = null
-
-
 
 const handleChange = (val: CollapseModelValue) => {
   console.log(val)
@@ -27,38 +21,37 @@ const handleChange = (val: CollapseModelValue) => {
 const handleCurrentChange = (val: number) => {
   console.log(`当前页: ${val}`)
   currentPage.value = val
-  fetchOrders() // 重新向后端拿数据
+  fetchBorrows() // 重新向后端拿数据
   window.scrollTo(0, 0)
 }
 const handleSizeChange = (val: number) => {
   console.log(`每页 ${val} 条`)
   pageSize.value = val
   currentPage.value = 1 // 改变每页大小时，重置回第一页
-  fetchOrders()
+  fetchBorrows()
 }
 
-const orders = ref<Order[]>([])
+const borrows = ref<BorrowRecord[]>([])
 
-const open_order = (orderId: number) => {
-  const targetOrder = orders.value.find((item) => item.id === orderId)
-  if (targetOrder) {
-    currentOrder.value = targetOrder // 设置当前订单
+const openBorrow = (borrowId: number) => {
+  const targetBorrow = borrows.value.find((item) => item.id === borrowId)
+  if (targetBorrow) {
+    currentBorrow.value = targetBorrow // 设置当前借阅记录
     dialogVisible.value = true // 打开弹窗
   } else {
-    ElMessage.error('未找到订单数据')
+    ElMessage.error('未找到借阅记录')
   }
 }
 const formatStatus = (status: number) => {
-  return OrderStatusMap[status] || { label: '未知状态', type: 'info' }
+  return BorrowStatusMap[status] || { label: '未知状态', type: 'info' }
 }
 const checkRenewDisabled = (item: any) => {
-  if (item.status === OrderStatus.COMPLETED) {
+  if (item.status === BorrowStatus.COMPLETED) {
     return true
   }
   if (item.renew_count > 2) {
     return true
   }
-
 
   if (!item.endTime) return true // 防止字段不存在报错
 
@@ -66,7 +59,7 @@ const checkRenewDisabled = (item: any) => {
   const now = Date.now()
 
   const diff = deadline - now
-  
+
   const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000
 
   if (diff > sevenDaysInMs || diff < 0) {
@@ -77,29 +70,28 @@ const checkRenewDisabled = (item: any) => {
   return false
 }
 
-
 const formatTime = (timeStr: string | number | Date) => {
   // 1. 空值检查
-  if (!timeStr) return '--';
+  if (!timeStr) return '--'
 
   // 2. 将字符串转换为 Date 对象
   // 浏览器原生支持解析这种带 'T' 的 ISO 格式
-  const date = new Date(timeStr);
+  const date = new Date(timeStr)
 
   // 3. 提取年月日时分秒，并补零
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const seconds = date.getSeconds().toString().padStart(2, '0');
+  const year = date.getFullYear()
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const seconds = date.getSeconds().toString().padStart(2, '0')
 
   // 4. 拼接并返回
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-};
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
 
 const stepActiveIndex = computed(() => {
-  const status = currentOrder.value?.status ?? 0
+  const status = currentBorrow.value?.status ?? 0
 
   if (status === 0) return 0
   // 对于 1-4 的状态，active 应该是 status - 1
@@ -107,8 +99,8 @@ const stepActiveIndex = computed(() => {
   return Math.max(0, status)
 })
 
-const Complete_borrow = async (key: Order) => {
-  const res = await CompleteOrderApi(String(key.id))
+const completeBorrow = async (key: BorrowRecord) => {
+  const res = await completeBorrowApi(String(key.id))
   if (res.code !== 1) {
     ElMessage.error(res.message || '归还失败')
     return
@@ -119,15 +111,15 @@ const Complete_borrow = async (key: Order) => {
   }, 1000)
 }
 
-const reminder_book = async (id: number) => {
-  const res = await ReminderOrderApi(id)
+const renewBook = async (id: number) => {
+  const res = await renewBorrowApi(id)
   if (res.code === 1) {
     ElMessage.success('已续借')
   }
 }
 
-const fetchOrders = async () => {
-  const params: SendOrder = {
+const fetchBorrows = async () => {
+  const params: SendBorrowQuery = {
     page: currentPage.value,
     pageSize: pageSize.value,
     status: null,
@@ -135,10 +127,10 @@ const fetchOrders = async () => {
 
   try {
     console.log('请求参数:', params)
-    const res = await getOrder(params)
-    console.log('获取订单数据:', res)
+    const res = await getBorrowRecords(params)
+    console.log('获取借阅数据:', res)
     if (res.code === 1) {
-      orders.value = res.data.records
+      borrows.value = res.data.records
       total.value = res.data.total
     }
   } catch (error) {}
@@ -148,119 +140,119 @@ watch(searchQuery, () => {
   if (timer) clearTimeout(timer)
   timer = setTimeout(() => {
     currentPage.value = 1
-    fetchOrders()
+    fetchBorrows()
   }, 500)
 })
 
 onMounted(async () => {
-  await fetchOrders()
+  await fetchBorrows()
 })
 </script>
 
 <template>
-  <div class="order">
-    <div class="order-header"></div>
+  <div class="borrow-management">
+    <div class="borrow-header"></div>
 
     <el-card class="cart-container">
       <!-- 表头 -->
       <template #header>
         <el-row :gutter="24" align="middle">
           <el-col :span="2"></el-col>
-          <el-col :span="10">订单</el-col>
+          <el-col :span="10">借阅记录</el-col>
           <el-col class="head-label" :span="3"></el-col>
           <el-col class="head-label" :span="3">状态</el-col>
           <el-col class="head-label" :span="3">操作</el-col>
           <el-col class="head-label" :span="3">借阅时间</el-col>
         </el-row>
       </template>
-      <div class="order-items">
+      <div class="borrow-items">
         <el-card
-          v-for="order in orders"
-          :key="order.id"
-          class="order-item"
+          v-for="borrow in borrows"
+          :key="borrow.id"
+          class="borrow-item"
           style="margin-bottom: 20px"
         >
           <template #header>
-            <div class="order-id-header">
-              <span>订单号：{{ order.number }}</span>
+            <div class="borrow-id-header">
+              <span>借阅编号：{{ borrow.number }}</span>
             </div>
           </template>
           <el-row align="middle">
-            <el-col class="order-info" :span="12">
+            <el-col class="borrow-info" :span="12">
               <div
-                v-if="order.borrow_detail_list && order.borrow_detail_list.length > 0"
+                v-if="borrow.borrow_detail_list && borrow.borrow_detail_list.length > 0"
                 style="display: flex; align-items: center"
               >
                 <div style="margin-right: 15px">
                   <el-image
                     style="width: 60px; height: 80px; border-radius: 4px"
-                    :src="order.borrow_detail_list[0]?.image"
-                    :preview-src-list="[order.borrow_detail_list[0]?.image]"
+                    :src="borrow.borrow_detail_list[0]?.image"
+                    :preview-src-list="[borrow.borrow_detail_list[0]?.image]"
                     fit="cover"
                   />
                 </div>
 
                 <div>
                   <h4 style="margin: 0 0 5px 0; font-size: 15px">
-                    {{ order.borrow_detail_list[0]?.name }}
+                    {{ borrow.borrow_detail_list[0]?.name }}
                   </h4>
                   <div style="font-size: 13px; color: #666">
                     <span
-                      v-if="order.borrow_detail_list && order.borrow_detail_list.length > 1"
+                      v-if="borrow.borrow_detail_list && borrow.borrow_detail_list.length > 1"
                       style="color: #409eff; margin-right: 10px"
                     >
-                      [等{{ order.borrow_detail_list?.length || 0 }}种书本]
+                      [等{{ borrow.borrow_detail_list?.length || 0 }}种书本]
                     </span>
                   </div>
                 </div>
               </div>
             </el-col>
-            <el-col class="order-total" :span="3"> </el-col>
-            <el-col class="order-staus" :span="3">
-              <el-tag :type="formatStatus(order.status).type">
-                {{ formatStatus(order.status).label }}
+            <el-col class="borrow-total" :span="3"> </el-col>
+            <el-col class="borrow-status" :span="3">
+              <el-tag :type="formatStatus(borrow.status).type">
+                {{ formatStatus(borrow.status).label }}
               </el-tag>
             </el-col>
-            <el-col class="order-opera" :span="3">
-              <el-button type="primary" class="button" @click="open_order(order.id)">
+            <el-col class="borrow-opera" :span="3">
+              <el-button type="primary" class="button" @click="openBorrow(borrow.id)">
                 详情
               </el-button>
               <el-button
-                :disabled="order.status === OrderStatus.COMPLETED || checkRenewDisabled(order)"
+                :disabled="borrow.status === BorrowStatus.COMPLETED || checkRenewDisabled(borrow)"
                 type="primary"
-                @click="reminder_book(order.id)"
+                @click="renewBook(borrow.id)"
                 class="button"
               >
                 续借
               </el-button>
               <el-button
                 type="danger"
-                :disabled="order.status === OrderStatus.COMPLETED"
-                @click="Complete_borrow(order)"
+                :disabled="borrow.status === BorrowStatus.COMPLETED"
+                @click="completeBorrow(borrow)"
                 class="button"
               >
                 归还
               </el-button>
             </el-col>
-            <el-col class="order-time" :span="3">
-              <span style="font-size: 13px; color: #999">{{ formatTime(order.borrow_time) }}</span>
+            <el-col class="borrow-time" :span="3">
+              <span style="font-size: 13px; color: #999">{{ formatTime(borrow.borrow_time) }}</span>
             </el-col>
           </el-row>
           <el-collapse
             v-model="activeNames"
             @change="handleChange"
-            v-if="order.borrow_detail_list && order.borrow_detail_list.length > 1"
+            v-if="borrow.borrow_detail_list && borrow.borrow_detail_list.length > 1"
           >
-            <el-collapse-item :name="order.id">
+            <el-collapse-item :name="borrow.id">
               <template #title>
                 <span style="margin-right: 8px">
-                  {{ activeNames.includes(order.id) ? '收起' : '查看' }}其余
-                  {{ (order.borrow_detail_list?.length || 1) - 1 }} 件书籍
+                  {{ activeNames.includes(borrow.id) ? '收起' : '查看' }}其余
+                  {{ (borrow.borrow_detail_list?.length || 1) - 1 }} 件书籍
                 </span>
               </template>
 
               <div
-                v-for="book in order.borrow_detail_list?.slice(1)"
+                v-for="book in borrow.borrow_detail_list?.slice(1)"
                 :key="book.id"
                 style="
                   display: flex;
@@ -297,14 +289,14 @@ onMounted(async () => {
         </div>
       </div>
     </el-card>
-    <el-dialog v-model="dialogVisible" title="订单详情" width="700px" destroy-on-close>
-      <div v-if="currentOrder">
+    <el-dialog v-model="dialogVisible" title="借阅详情" width="700px" destroy-on-close>
+      <div v-if="currentBorrow">
         <div
-          v-if="currentOrder.status === OrderStatus.OVERDUE"
+          v-if="currentBorrow.status === BorrowStatus.OVERDUE"
           style="margin-bottom: 20px; color: #909399; text-align: center"
         >
           <el-steps :active="2" simple style="margin-bottom: 20px">
-            <el-step title="订单提交" status="success" icon="Document" />
+            <el-step title="借阅提交" status="success" icon="Document" />
             <el-step title="已逾期" status="error" icon="CircleCloseFilled" />
           </el-steps>
         </div>
@@ -320,17 +312,21 @@ onMounted(async () => {
           </el-steps>
         </div>
         <el-descriptions title="基本信息" :column="2" border>
-          <el-descriptions-item label="订单编号">{{ currentOrder.number }}</el-descriptions-item>
+          <el-descriptions-item label="借阅编号">{{ currentBorrow.number }}</el-descriptions-item>
           <el-descriptions-item label="借阅时间">{{
-            formatTime(currentOrder.borrow_time)
+            formatTime(currentBorrow.borrow_time)
           }}</el-descriptions-item>
-          <el-descriptions-item label="截止归还时间">{{ formatTime(currentOrder.due_date)}}</el-descriptions-item>
-          <el-descriptions-item label="实际归还时间">{{ formatTime(currentOrder.return_time)}}</el-descriptions-item>         
+          <el-descriptions-item label="截止归还时间">{{
+            formatTime(currentBorrow.due_date)
+          }}</el-descriptions-item>
+          <el-descriptions-item label="实际归还时间">{{
+            formatTime(currentBorrow.return_time)
+          }}</el-descriptions-item>
         </el-descriptions>
 
         <div style="margin-top: 20px">
           <h4 style="margin-bottom: 10px">书本清单</h4>
-          <el-table :data="currentOrder.borrow_detail_list || []" border stripe size="small">
+          <el-table :data="currentBorrow.borrow_detail_list || []" border stripe size="small">
             <el-table-column label="书本封面" width="80" align="center">
               <template #default="scope">
                 <el-image
@@ -352,12 +348,11 @@ onMounted(async () => {
         </span>
       </template>
     </el-dialog>
-
   </div>
 </template>
 
 <style scoped>
-.order {
+.borrow-management {
   max-width: 80%;
   margin: 0 auto;
   padding: 20px;
@@ -369,17 +364,17 @@ onMounted(async () => {
   padding-bottom: 20px;
 }
 
-.order-header {
+.borrow-header {
   margin-bottom: 20px;
 }
 
-.order-total,
-.order-staus,
-.order-time {
+.borrow-total,
+.borrow-status,
+.borrow-time {
   text-align: center;
 }
 
-.order-id-header {
+.borrow-id-header {
   font-size: 13px;
   color: #909399;
 }
@@ -400,7 +395,7 @@ onMounted(async () => {
   justify-content: flex-end;
 }
 
-.order-opera {
+.borrow-opera {
   display: flex;
   flex-direction: column;
 }

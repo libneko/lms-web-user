@@ -7,12 +7,11 @@ import {
   deleteCartItemApi,
   clearCartApi,
   SubmitOrderApi,
-} from '@/api/shopping-cart'
-import type { Product, Store, temp } from '@/api/types'
+} from '@/api/borrow-cart'
+import type { Product, Store } from '@/api/types'
 import { bookApi } from '@/api/introduction'
 import { openBook } from '@/api/meta'
 import router from '@/router'
-import { Temporal } from '@js-temporal/polyfill'
 import { getProfile } from '@/api/profile'
 
 // 加载状态
@@ -21,11 +20,8 @@ const dialogVisible = ref(false)
 const isSubmitting = ref(false)
 const itemTimers = new Map<number, any>()
 const ischeck = ref(0)
-const tempp = ref<temp>()
 // 2. 用于存储全选操作的计时器
 let selectAllTimer: any = null
-
-
 
 const store = ref<Store>({
   id: 1,
@@ -34,7 +30,6 @@ const store = ref<Store>({
   indeterminate: false,
   items: [],
 })
-
 
 const fetchborrowCartData = async () => {
   loading.value = true
@@ -58,8 +53,6 @@ const fetchborrowCartData = async () => {
 
           // 其他前端字段
           specifications: ['默认规格'],
-          freeShipping: cartItem.amount > 10,
-          guarantee: true,
           stock: bookDetail?.stock ?? 100,
         }
       })
@@ -77,19 +70,15 @@ const fetchborrowCartData = async () => {
   }
 }
 
-
-// 计算属性 - 所有商品列表
+// 计算属性 - 所有书籍列表
 const cartItems = computed<Product[]>(() => {
   return store.value.items
 })
 
-// 计算属性 - 选中商品数量
+// 计算属性 - 选中书籍数量
 const selectedCount = computed(() => {
   return cartItems.value.filter((item: Product) => item.selected).length
 })
-
-
-
 
 const updateStoreIndeterminate = () => {
   if (!store.value) return
@@ -124,7 +113,7 @@ const handleItemSelectChange = async (item: Product) => {
 
   const timer = setTimeout(async () => {
     try {
-      console.log(`[防抖结束] 正在向后端同步商品ID: ${item.id}, 状态: ${item.selected}`)
+      console.log(`[防抖结束] 正在向后端同步书籍ID: ${item.id}, 状态: ${item.selected}`)
 
       // TODO: 这里调用你的真实接口
       // await updateCartItemApi({ id: item.cartId, selected: item.selected })
@@ -194,7 +183,7 @@ const handleQuantityChange = async (item: Product) => {
   }
 }
 
-// 方法 - 删除商品（调用API）
+// 方法 - 删除书籍（调用API）
 const removeItem = async (id: number) => {
   try {
     await ElMessageBox.confirm('确定要删除这个书籍吗？', '提示', {
@@ -217,7 +206,7 @@ const removeItem = async (id: number) => {
   }
 }
 
-// 方法 - 清空购物车（调用API）
+// 方法 - 清空借阅车（调用API）
 const clearCart = async () => {
   if (cartItems.value.length === 0) {
     ElMessage.warning('借阅车已经是空的')
@@ -235,7 +224,7 @@ const clearCart = async () => {
 
     if (response.code === 1) {
       store.value.items = []
-      ElMessage.success('购借阅已清空')
+      ElMessage.success('借阅车已清空')
     } else {
       ElMessage.error(response.message)
     }
@@ -275,17 +264,14 @@ const handleCheckout = async () => {
     return
   }
   await checkProfile()
-  if (ischeck.value === 0 ) return
+  if (ischeck.value === 0) return
 
-
-  const res = await SubmitOrderApi(tempp)
+  const res = await SubmitOrderApi()
   if (res.code === 1) {
     setTimeout(() => {
       isSubmitting.value = false
       dialogVisible.value = false
       location.reload()
-
-
     }, 1500)
     ElMessage.success('借阅请求提交成功，后续可在图书管理中查看相关信息')
   } else {
@@ -293,24 +279,22 @@ const handleCheckout = async () => {
     isSubmitting.value = false
     return
   }
-
-
 }
 
 // 生命周期
 onMounted(() => {
-  console.log('购物车组件已加载')
+  console.log('借阅车组件已加载')
   fetchborrowCartData()
 })
 </script>
 <template>
-  <div class="shopping-cart">
+  <div class="borrow-cart">
     <!-- 顶部标题栏 -->
     <div class="cart-header">
       <span class="selected-count">已选 {{ selectedCount }} 件图书</span>
     </div>
 
-    <!-- 购物车内容区域 -->
+    <!-- 借阅车内容区域 -->
     <el-card class="cart-container">
       <!-- 表头 -->
       <template #header>
@@ -344,7 +328,7 @@ onMounted(() => {
               <el-checkbox v-model="item.selected" @change="() => handleItemSelectChange(item)" />
             </el-col>
 
-            <!-- 商品信息 -->
+            <!-- 书籍信息 -->
             <el-col class="item-info" :span="16">
               <el-row>
                 <el-image
@@ -366,7 +350,6 @@ onMounted(() => {
               </el-row>
             </el-col>
 
-
             <!-- 数量控制 -->
             <el-col class="item-quantity" :span="3" style="margin-top: 20px">
               <el-input-number
@@ -379,7 +362,6 @@ onMounted(() => {
               />
               <div class="stock-info">库存 {{ item.stock }} 件</div>
             </el-col>
-
 
             <!-- 操作按钮 -->
             <el-col class="item-actions" :span="3">
@@ -438,7 +420,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.shopping-cart {
+.borrow-cart {
   max-width: 80%;
   margin: 0 auto;
   padding: 20px;
@@ -476,55 +458,8 @@ onMounted(() => {
   text-align: center;
 }
 
-.store-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.store-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.store-action {
-  margin-left: 8px;
-}
-
-.store-promotion {
-  display: flex;
-  align-items: center;
-}
-
 .store-items {
   background-color: #fff;
-}
-
-.store-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 12px 20px;
-  background-color: #fafafa;
-  border-top: 1px solid #e8e8e8;
-}
-
-.store-total {
-  font-size: 14px;
-  color: #666;
-}
-
-.store-total-price {
-  font-size: 16px;
-  color: #ff5000;
-  font-weight: bold;
-  margin: 0 4px;
-}
-
-.store-discount {
-  color: #52c41a;
-  font-size: 12px;
 }
 
 .cart-item {
@@ -582,25 +517,6 @@ onMounted(() => {
   gap: 5px;
 }
 
-.item-price {
-  text-align: center;
-}
-
-.current-price {
-  display: block;
-  font-size: 16px;
-  color: #ff5000;
-  font-weight: bold;
-}
-
-.original-price {
-  display: block;
-  font-size: 12px;
-  color: #999;
-  text-decoration: line-through;
-  margin-top: 4px;
-}
-
 .item-quantity {
   text-align: center;
 }
@@ -611,48 +527,8 @@ onMounted(() => {
   margin-top: 5px;
 }
 
-.item-subtotal {
-  text-align: center;
-}
-
-.subtotal-amount {
-  display: block;
-  font-size: 16px;
-  color: #ff5000;
-  font-weight: bold;
-}
-
-.discount-info {
-  font-size: 12px;
-  color: #52c41a;
-  margin-top: 4px;
-}
-
 .item-actions {
   text-align: center;
-}
-
-.option-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.option-top {
-  display: flex;
-  align-items: center;
-  margin-bottom: 4px;
-  font-size: 14px;
-  color: #303133;
-}
-
-.option-bottom {
-  font-size: 12px;
-  color: #909399;
-  line-height: 1.4;
-  /* 超出省略号 */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .empty-cart {
@@ -688,21 +564,6 @@ onMounted(() => {
 .price-line {
   font-size: 16px;
   margin-bottom: 5px;
-}
-
-.total-label {
-  font-weight: 500;
-}
-
-.total-price {
-  font-size: 24px;
-  color: #ff5000;
-  font-weight: bold;
-}
-
-.discount-line {
-  font-size: 12px;
-  color: #52c41a;
 }
 
 .checkout-btn {
