@@ -129,7 +129,7 @@ const handleItemSelectChange = async (item: Product) => {
   // 4. 将计时器存入 Map
   itemTimers.set(item.id, timer)
 }
-// 3. 店铺全选/取消全选
+// 3. 全选/取消全选
 const handleSelectAllChange = async (val: boolean) => {
   if (!store.value) return
 
@@ -159,31 +159,7 @@ const handleSelectAllChange = async (val: boolean) => {
   }, 1000) // <--- 延迟 1 秒
 }
 
-const handleQuantityChange = async (item: Product) => {
-  if (item.quantity < 1) item.quantity = 1
-  if (item.quantity > item.stock) item.quantity = item.stock
-
-  try {
-    const response = await updateCartItemApi({
-      book_id: item.id,
-      number: item.quantity,
-    })
-
-    if (response.code === 1) {
-      ElMessage.success(`已更新 ${item.name} 的数量`)
-    } else {
-      ElMessage.error(response.message)
-      // 失败时重新获取数据恢复状态
-      await fetchborrowCartData()
-    }
-  } catch (error) {
-    console.error('更新数量失败:', error)
-    ElMessage.error('更新失败，请稍后重试')
-    await fetchborrowCartData()
-  }
-}
-
-// 方法 - 删除书籍（调用API）
+// 删除书籍（调用API）
 const removeItem = async (id: number) => {
   try {
     await ElMessageBox.confirm('确定要删除这个书籍吗？', '提示', {
@@ -308,7 +284,7 @@ onMounted(() => {
             </el-checkbox>
           </el-col>
           <el-col :span="16">图书</el-col>
-          <el-col class="head-label" :span="3">数量</el-col>
+          <el-col class="head-label" :span="3"></el-col>
           <el-col class="head-label" :span="3">操作</el-col>
         </el-row>
       </template>
@@ -352,15 +328,7 @@ onMounted(() => {
 
             <!-- 数量控制 -->
             <el-col class="item-quantity" :span="3" style="margin-top: 20px">
-              <el-input-number
-                v-model="item.quantity"
-                :min="1"
-                :max="item.stock > 99 ? 99 : item.stock"
-                size="small"
-                controls-position="right"
-                @change="() => handleQuantityChange(item)"
-              />
-              <div class="stock-info">库存 {{ item.stock }} 件</div>
+
             </el-col>
 
             <!-- 操作按钮 -->

@@ -76,7 +76,7 @@ const handleChange = (value: number) => {
             <p>{{ book?.description }}</p>
           </div>
           <div class="books-buy">
-            <el-input-number v-model="num" :min="1" :max="book?.stock" @change="handleChange" />
+            
             <el-button type="primary" @click="addToBorrowCart(borrowItem)">加入借阅车</el-button>
           </div>
         </div>

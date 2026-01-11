@@ -176,12 +176,6 @@ export interface GetBorrowRecords {
   records: BorrowRecord[]
 }
 
-export interface Notice {
-  id: string
-  content: string
-  status: number
-  create_time: string
-}
 
 export interface BorrowResponse {
   id: number
