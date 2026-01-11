@@ -4,6 +4,7 @@ import { bookApi } from '@/api/introduction'
 import type { BookData, Book } from '@/api/types'
 import { ref, onMounted } from 'vue'
 import { addborrowCartApi, getborrowCartApi } from '@/api/borrow-cart'
+import router from '@/router'
 
 const props = defineProps<{ id: number }>()
 
@@ -21,27 +22,35 @@ const num = ref(1)
 onMounted(async () => {
   const res = await bookApi(props.id)
   console.log(res)
-  book.value = res.data
-  book_id = book.value.id
-  borrowItem.value.book_id = book_id
+  if (res.code === 0) {
+    ElMessage.error("该书籍已被借完或者下架")
+    router.push('/')
+  }
+  else { 
+    
+    book.value = res.data
+    book_id = book.value.id
+    borrowItem.value.book_id = book_id
+  }
+
 })
 
 const addToBorrowCart = async (book: BookData) => {
   console.log(book)
 
-  // 先检查该书是否已经在借阅车中
+  // 先检查该书是否已经在书单中
   try {
     const cartRes = await getborrowCartApi()
     if (cartRes.code === 1 && cartRes.data && Array.isArray(cartRes.data)) {
       // 检查是否已存在相同书籍
       const existingBook = cartRes.data.find((item) => item.book_id === book.book_id)
       if (existingBook) {
-        ElMessage.warning('该书已在借阅车中，同种书一次只能借一本')
+        ElMessage.warning('该书已在书单中，同种书一次只能借一本')
         return
       }
     }
   } catch (error) {
-    console.error('检查借阅车失败:', error)
+    console.error('检查书单失败:', error)
   }
 
   const res = await addborrowCartApi(book)
@@ -50,7 +59,7 @@ const addToBorrowCart = async (book: BookData) => {
   if (res.code !== 0) {
     console.log('加入成功:', res)
     count.value = count.value + 1
-    ElMessage.success('已加入借阅车')
+    ElMessage.success('已加入书单')
   } else {
     ElMessage.error('加入失败')
   }
@@ -98,7 +107,7 @@ const handleChange = (value: number) => {
               type="primary"
               :disabled="(book?.stock ?? 0) <= 0 || count > (book?.stock ?? 0)"
               @click="addToBorrowCart(borrowItem)"
-              >加入借阅车</el-button
+              >加入书单</el-button
             >
           </div>
         </div>
