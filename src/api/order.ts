@@ -8,20 +8,15 @@ export const getOrder = (data: SendOrder): Promise<ApiResponse<GetOrders>> => {
   if (data.status !== undefined && data.status !== null) {
     params.append('status', data.status.toString())
   }
-  return request.get(`/user/order/historyOrders?${params.toString()}`)
+  return request.get(`/user/borrow/history?${params.toString()}`)
 }
 
 export const CompleteOrderApi = (order_id: string): Promise<ApiResponse<object>> => {
-  return request.put(`/user/order/complete/${order_id}`)
+  return request.put(`/user/borrow/complete/${order_id}`)
 }
 
-export const payOrderApi = (pay: PayInfo): Promise<ApiResponse<object>> => {
-  return request.put(`/user/order/payment`, pay)
-}
-export const DeleteOrderApi = (order_id: string): Promise<ApiResponse<object>> => {
-  return request.put(`/user/order/cancel/${order_id}`)
-}
+
 
 export const ReminderOrderApi = (order_id: number): Promise<ApiResponse<object>> => {
-  return request.get(`/user/order/reminder/${order_id}`)
+  return request.put(`/user/borrow/renew/${order_id}`)
 }

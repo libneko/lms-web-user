@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import { bookApi } from '@/api/introduction'
 import type { BookData, Book } from '@/api/types'
 import { ref, onMounted } from 'vue'
-import { addShoppingCartApi } from '@/api/shopping-cart'
+import { addborrowCartApi } from '@/api/shopping-cart'
 
 const props = defineProps<{ id: number }>()
 
@@ -27,7 +27,7 @@ onMounted(async () => {
 
 const addShopping = async (book: BookData) => {
   console.log(book)
-  const res = await addShoppingCartApi(book)
+  const res = await addborrowCartApi(book)
   console.log(res)
   // 成功提示
   if (res.code !== 0) {

@@ -4,12 +4,11 @@ import IndexView from '@/views/index/index.vue'
 import LayoutView from '@/views/layout/index.vue'
 import LoginView from '@/views/login/index.vue'
 import RegisterView from '@/views/register/index.vue'
-import ShoppingCartView from '@/views/shopping-cart/index.vue'
+import ShoppingCartView from '@/views/borrow-cart/index.vue'
 import SearchView from '@/views/search/index.vue'
 import IntroductionView from '@/views/Introduction/index.vue'
 import ProfileView from '@/views/profile/index.vue'
 import OrderView from '@/views/order/index.vue'
-import AddressManagementView from '@/views/address/index.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -24,8 +23,8 @@ const router = createRouter({
           component: IndexView,
         },
         {
-          path: '/shopping-cart',
-          name: 'shopping-cart',
+          path: '/borrow-cart',
+          name: 'borrow-cart',
           component: ShoppingCartView,
           meta: { title: '我的借阅车' },
         },
@@ -53,12 +52,6 @@ const router = createRouter({
           name: 'order',
           component: OrderView,
           meta: { title: '图书管理' },
-        },
-        {
-          path: '/address',
-          name: 'address',
-          component: AddressManagementView,
-          meta: { title: '地址管理' },
         },
       ],
     },

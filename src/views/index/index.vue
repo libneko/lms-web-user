@@ -19,6 +19,7 @@ const isMobile = ref(false)
 const loadData = async () => {
   categories.value = (await getCategories()).data
   const res = await getRandomBooks(23)
+  console.log(res)
   books.value = res.data
   banners.value = books.value.slice(0, 3)
   suggestBooks.value = books.value.slice(3, 23)
@@ -73,7 +74,7 @@ onUnmounted(() => {
 
       <!-- 横向分类栏 -->
       <div class="category-bar">
-        <div>全部商品分类</div>
+        <div>全部图书分类</div>
 
         <el-scrollbar wrap-style="overflow-x: auto; white-space: nowrap;">
           <el-space size="10">

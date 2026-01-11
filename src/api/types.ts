@@ -44,7 +44,6 @@ export interface Book {
   name: string
   author: string
   category_id: string
-  price: number
   image: string
   description: string
   status: number
@@ -81,13 +80,13 @@ export interface SendSearch {
 }
 
 // 根据图片添加购物车相关接口
-export interface ShoppingCartItem {
+export interface borrowCartItem {
   id: number
   name: string
   user_id: number
   book_id: number
   number: number // 数量
-  amount: number // 金额
+  amount: number 
   image: string
   create_time: string
   selected: boolean
@@ -160,30 +159,21 @@ export interface Order {
   number: string
   status: number
   user_id: number
-  address_book_id: number
-  order_time: string
-  checkout_time: string
-  pay_method: number
-  pay_status: number
-  amount: number
+  borrow_time: string
+  renew_count:number
+  due_date: string
   user_name: string
-  phone: string
-  consignee: string
-  cancel_time: string
-  estimated_delivery_time: string
-  delivery_time: string
-  shipping_fee: number
-  order_books: string
-  order_detail_list: OrderDetail[]
+  return_time: string
+  borrow_books: string
+  borrow_detail_list: OrderDetail[]
 }
 
 export interface OrderDetail {
   id: number
   name: string
-  order_id: number
+  borrow_record_id: number
   book_id: number
   number: number
-  amount: number
   image: string
 }
 export interface GetOrders {
@@ -231,7 +221,10 @@ export interface SubmitOrder {
 
 export interface OrderPesponse {
   id: number
-  orderNumber: string
-  orderAmount: number
-  orderTime: string
+  borrow_number: string
+  borrow_time:string
+}
+
+export interface temp{
+  
 }

@@ -2,14 +2,13 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
-  getShoppingCartApi,
+  getborrowCartApi,
   updateCartItemApi,
   deleteCartItemApi,
   clearCartApi,
   SubmitOrderApi,
-  getAddressApi,
 } from '@/api/shopping-cart'
-import type { AddressBook, Product, SubmitOrder, Store } from '@/api/types'
+import type { Product, SubmitOrder, Store, temp } from '@/api/types'
 import { bookApi } from '@/api/introduction'
 import { openBook } from '@/api/meta'
 import router from '@/router'
@@ -23,6 +22,7 @@ const isSubmitting = ref(false)
 const orderFormRef = ref<FormInstance>()
 const itemTimers = new Map<number, any>()
 const ischeck = ref(0)
+const tempp = ref<temp>()
 // 2. 用于存储全选操作的计时器
 let selectAllTimer: any = null
 
@@ -37,28 +37,9 @@ const orderInfo = reactive({
   totalAmount: 299.0,
 })
 
-const rules = reactive<FormRules>({
-  addressId: [{ required: true, message: '请选择收货地址', trigger: 'change' }],
-  paymentMethod: [{ required: true, message: '请选择支付方式', trigger: 'change' }],
-})
 
-const addressList = ref<AddressBook[]>([])
 
-const initMockData = () => {
-  // 自动选中默认地址
-  const defaultAddr = addressList.value.find((addr) => addr.is_default)
-  if (defaultAddr) {
-    formData.addressId = defaultAddr.id
-  }
-}
 
-const getFullAddress = (item: AddressBook) => {
-  // 拼接省市区+详细地址
-  return `${item.province_name}${item.city_name}${item.district_name} ${item.detail}`
-}
-const formatAddressForInput = (item: AddressBook) => {
-  return `${item.consignee} ${item.phone} - ${item.district_name} ${item.detail}`
-}
 
 // 店铺数据类型定义
 const store = ref<Store>({
@@ -69,11 +50,11 @@ const store = ref<Store>({
   items: [],
 })
 
-// 获取购物车数据 - 增强错误处理
-const fetchShoppingCartData = async () => {
+
+const fetchborrowCartData = async () => {
   loading.value = true
   try {
-    const response = await getShoppingCartApi()
+    const response = await getborrowCartApi()
 
     if (response.code === 1 && response.data && Array.isArray(response.data)) {
       // 清空并重新填充数据
@@ -86,9 +67,7 @@ const fetchShoppingCartData = async () => {
         const bookDetail = books[idx]!.data
         return {
           ...bookDetail,
-          // 关键修改 1: 绑定购物车ID，方便后续更新
           cartId: cartItem.id,
-          // 关键修改 2: 数量和选中状态都从后端取
           quantity: cartItem.number,
           selected: Boolean(cartItem.selected), // 确保转为布尔值
 
@@ -113,15 +92,6 @@ const fetchShoppingCartData = async () => {
   }
 }
 
-const fetchAddressData = async () => {
-  const res = await getAddressApi()
-  if (res.code === 1) {
-    console.log(res.data)
-    addressList.value = res.data
-  } else {
-    ElMessage.error('获取失败')
-  }
-}
 
 // 计算属性 - 所有商品列表
 const cartItems = computed<Product[]>(() => {
@@ -133,20 +103,14 @@ const selectedCount = computed(() => {
   return cartItems.value.filter((item: Product) => item.selected).length
 })
 
-// 计算属性 - 总价格
-const totalPrice = computed(() => {
-  return cartItems.value
-    .filter((item: Product) => item.selected)
-    .reduce((total: number, item: Product) => total + item.price * item.quantity, 0)
-})
 
-// 方法 - 更新店铺的不确定状态
+
+
 const updateStoreIndeterminate = () => {
   if (!store.value) return
 
   const items = store.value.items
   const total = items.length
-  // 统计已选中的数量
   const selectedCount = items.filter((item) => item.selected).length
 
   // 逻辑：如果选中的数量等于总数，且总数大于0，则为全选
@@ -172,8 +136,7 @@ const handleItemSelectChange = async (item: Product) => {
   if (itemTimers.has(item.id)) {
     clearTimeout(itemTimers.get(item.id))
   }
-  // B. 发送请求给后端
-  // 3. 设定一个新的计时器 (比如 1000ms 后执行)
+
   const timer = setTimeout(async () => {
     try {
       console.log(`[防抖结束] 正在向后端同步商品ID: ${item.id}, 状态: ${item.selected}`)
@@ -196,11 +159,9 @@ const handleItemSelectChange = async (item: Product) => {
 const handleSelectAllChange = async (val: boolean) => {
   if (!store.value) return
 
-  // A. 前端视觉立即更新（循环设置所有商品）
   store.value.items.forEach((item) => {
     item.selected = val
   })
-  // B. 更新半选状态 UI
   updateStoreIndeterminate()
   if (itemTimers.size > 0) {
     itemTimers.forEach((timer) => clearTimeout(timer))
@@ -209,7 +170,6 @@ const handleSelectAllChange = async (val: boolean) => {
   if (selectAllTimer) {
     clearTimeout(selectAllTimer)
   }
-  // C. 发送请求给后端 (这里是你需要新增的逻辑)
   selectAllTimer = setTimeout(async () => {
     try {
       console.log(`[防抖结束] 正在向后端同步全选状态: ${val}`)
@@ -225,7 +185,6 @@ const handleSelectAllChange = async (val: boolean) => {
   }, 1000) // <--- 延迟 1 秒
 }
 
-// 方法 - 处理数量变化（调用API）
 const handleQuantityChange = async (item: Product) => {
   if (item.quantity < 1) item.quantity = 1
   if (item.quantity > item.stock) item.quantity = item.stock
@@ -241,12 +200,12 @@ const handleQuantityChange = async (item: Product) => {
     } else {
       ElMessage.error(response.message)
       // 失败时重新获取数据恢复状态
-      await fetchShoppingCartData()
+      await fetchborrowCartData()
     }
   } catch (error) {
     console.error('更新数量失败:', error)
     ElMessage.error('更新失败，请稍后重试')
-    await fetchShoppingCartData()
+    await fetchborrowCartData()
   }
 }
 
@@ -264,7 +223,7 @@ const removeItem = async (id: number) => {
     if (response.code === 1) {
       // 删除成功后重新获取数据
       console.log('删除书籍成功，刷新数据', response)
-      await fetchShoppingCartData()
+      await fetchborrowCartData()
     } else {
       ElMessage.error(response.message)
     }
@@ -331,62 +290,32 @@ const handleCheckout = async () => {
     return
   }
   await checkProfile()
-  if (ischeck.value !== 1) {
+  if (ischeck.value === 0 ) return
+
+
+  const res = await SubmitOrderApi(tempp)
+  if (res.code === 1) {
+    setTimeout(() => {
+      isSubmitting.value = false
+      dialogVisible.value = false
+      location.reload()
+
+      // 此处可以添加跳转逻辑
+    }, 1500)
+    ElMessage.success('借阅请求提交成功，后续可在图书管理中查看相关信息')
+  } else {
+    ElMessage.error(res.message || '请求提交失败，请重试')
+    isSubmitting.value = false
     return
   }
 
-  const now = Temporal.Now.plainDateTimeISO().toString({ smallestUnit: 'second' }).replace('T', ' ')
-  orderInfo.estimatedTime = now.toString()
-  console.log(orderInfo.estimatedTime)
-  dialogVisible.value = true
-  orderInfo.totalAmount = totalPrice.value + orderInfo.shippingFee
-}
-const submitOrder = async () => {
-  if (!orderFormRef.value) return
 
-  // 1. 校验表单
-  await orderFormRef.value.validate(async (valid) => {
-    if (valid) {
-      isSubmitting.value = true // 开启加载状态
-      const payMethodMap: Record<string, number> = {
-        wechat: 1,
-        alipay: 2,
-      }
-      const requestData: SubmitOrder = {
-        address_book_id: formData.addressId!, // 使用 ! 断言，因为通过 validate 校验后一定不为空
-        pay_method: payMethodMap[formData.paymentMethod] ?? 1,
-        estimated_delivery_time: orderInfo.estimatedTime,
-        shipping_fee: orderInfo.shippingFee,
-        amount: orderInfo.totalAmount,
-      }
-      console.log('提交借阅数据:', requestData)
-      const res = await SubmitOrderApi(requestData)
-      if (res.code === 1) {
-        setTimeout(() => {
-          isSubmitting.value = false
-          dialogVisible.value = false
-          location.reload()
-
-          // 此处可以添加跳转逻辑
-        }, 1500)
-        ElMessage.success('借阅请求提交成功，后续可在图书管理中查看相关信息')
-      } else {
-        ElMessage.error(res.message || '请求提交失败，请重试')
-        isSubmitting.value = false
-        return
-      }
-    } else {
-      ElMessage.warning('请检查输入信息是否完整')
-    }
-  })
 }
 
 // 生命周期
 onMounted(() => {
   console.log('购物车组件已加载')
-  initMockData()
-  fetchAddressData()
-  fetchShoppingCartData()
+  fetchborrowCartData()
 })
 </script>
 <template>
@@ -485,44 +414,6 @@ onMounted(() => {
       </div>
     </el-card>
   </div>
-  <el-dialog
-    v-model="dialogVisible"
-    title="确认订单"
-    width="500px"
-    destroy-on-close
-    :close-on-click-modal="false"
-  >
-    <el-descriptions :column="1" border class="mb-4">
-      <el-descriptions-item label="借阅时间">
-        <el-tag type="info">{{ orderInfo.estimatedTime }}</el-tag>
-      </el-descriptions-item>
-      <el-descriptions-item label="归还时间">
-        <el-tag type="info">{{ orderInfo.estimatedTime }}</el-tag>
-      </el-descriptions-item>
-
-    </el-descriptions>
-
-    <el-divider />
-
-    <el-form
-      ref="orderFormRef"
-      :model="formData"
-      :rules="rules"
-      label-width="80px"
-      label-position="top"
-    >
-
-    </el-form>
-
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitOrder" :loading="isSubmitting">
-          借阅
-        </el-button>
-      </span>
-    </template>
-  </el-dialog>
   <!-- 底部悬浮结算栏 -->
   <el-affix
     position="bottom"

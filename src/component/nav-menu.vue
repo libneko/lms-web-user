@@ -6,7 +6,7 @@ defineEmits(['menu-click'])
   <el-menu router="true" class="nav-menu">
     <!-- 首页菜单 -->
     <div class="title">
-      <span>小书架</span>
+      <span>图书馆</span>
     </div>
     <div class="menu_item">
       <el-menu-item index="/">
@@ -15,7 +15,7 @@ defineEmits(['menu-click'])
       <el-menu-item index="/search">
         <el-icon><Search /></el-icon> 搜索
       </el-menu-item>
-      <el-menu-item index="/shopping-cart">
+      <el-menu-item index="/borrow-cart">
         <el-icon><ShoppingCart /></el-icon> 借阅车
       </el-menu-item>
       <el-menu-item index="/order">
