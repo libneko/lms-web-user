@@ -15,17 +15,15 @@ const activeNames = ref<number[]>([])
 let timer: any = null
 
 const handleChange = (val: CollapseModelValue) => {
-  console.log(val)
+  // 折叠面板状态变化
 }
 
 const handleCurrentChange = (val: number) => {
-  console.log(`当前页: ${val}`)
   currentPage.value = val
   fetchBorrows() // 重新向后端拿数据
   window.scrollTo(0, 0)
 }
 const handleSizeChange = (val: number) => {
-  console.log(`每页 ${val} 条`)
   pageSize.value = val
   currentPage.value = 1 // 改变每页大小时，重置回第一页
   fetchBorrows()

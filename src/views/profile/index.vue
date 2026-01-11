@@ -97,7 +97,6 @@ const uploadToServer = async (file: File) => {
     const response = await upload(file)
     if (response.code === 1) {
       form.avatar = response.data
-      ElMessage.success('上传头像成功')
     }
   } catch (error) {
     ElMessage.error('头像上传失败，请重试')
@@ -124,7 +123,6 @@ onMounted(async () => {
       try {
         const res = await getProfile(loginUser.id)
         if (res.code === 1) {
-          console.log('用户信息：', res.data)
           Object.assign(form, res.data)
           originalFormStr.value = JSON.stringify(form)
         } else {
@@ -151,10 +149,8 @@ const submit = async () => {
   }
   try {
     await formRef.value.validateField(fieldsToValidate)
-    // 3. 执行保存
     await save()
     originalFormStr.value = JSON.stringify(form)
-    ElMessage.success('保存修改成功')
   } catch (error) {
     ElMessage.error('请检查输入的数据是否正确')
   }

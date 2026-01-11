@@ -16,7 +16,6 @@ const registerForm = ref<RegisterForm>({
   code: '',
 })
 const getInstance = (instance: any) => {
-  console.log(instance)
   captcha.value = instance
 }
 
@@ -67,15 +66,9 @@ const startCountdown = (sec: number) => {
   }, 1000)
 }
 const register = async () => {
-  // 注册
-  console.log(registerForm.value)
-
   const result = await registerApi(registerForm.value)
-  console.log(result)
   if (result.code === 1) {
-    ElMessage.success('注册成功')
     localStorage.setItem('login_user', JSON.stringify(result.data))
-    // 跳转页面 - 首页
     router.push('/')
   } else {
     ElMessage.error('传验证码或相关信息填写错误')
@@ -85,8 +78,6 @@ const register = async () => {
 const submit = () => {
   formRef.value?.validate((valid) => {
     if (valid) {
-      console.log('校验通过，可以提交')
-      console.log(registerForm.value.email)
       registerForm.value.password = passwordForm.password
       register()
     } else {

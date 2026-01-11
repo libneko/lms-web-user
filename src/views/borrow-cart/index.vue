@@ -57,12 +57,9 @@ const fetchborrowCartData = async () => {
         }
       })
       refreshStoreState()
-    } else {
-      ElMessage.error(response.message)
     }
   } catch (error) {
     console.error('获取书单数据失败:', error)
-    ElMessage.error('网络错误，请稍后重试')
     // 错误时清空数据
     store.value.items = []
   } finally {
@@ -172,20 +169,18 @@ const removeItem = async (id: number) => {
 
     if (response.code === 1) {
       // 删除成功后重新获取数据
-      console.log('删除书籍成功，刷新数据', response)
       await fetchborrowCartData()
     } else {
       ElMessage.error(response.message)
     }
   } catch {
-    ElMessage.info('已取消删除')
+    // 用户取消删除，无需提示
   }
 }
 
 // 方法 - 清空书单（调用API）
 const clearCart = async () => {
   if (cartItems.value.length === 0) {
-    ElMessage.warning('书单已经是空的')
     return
   }
 
@@ -205,7 +200,7 @@ const clearCart = async () => {
       ElMessage.error(response.message)
     }
   } catch {
-    ElMessage.info('已取消清空操作')
+    // 用户取消清空，无需提示
   }
 }
 
@@ -216,10 +211,13 @@ const checkProfile = async () => {
     if (loginUser && loginUser.id) {
       try {
         const res = await getProfile(loginUser.id)
-        console.log(res)
         if (res.code === 1) {
           if (res.data.phone === null) {
-            ElMessage.error('您的个人信息不完整，请先完善个人信息')
+            ElMessage.warning('您的个人信息不完整，请先完善个人信息')
+            // 延迟跳转，让用户看到提示信息
+            setTimeout(() => {
+              router.push('/profile')
+            }, 1500)
           } else {
             ischeck.value = 1
           }
@@ -242,9 +240,8 @@ const handleCheckout = async () => {
   await checkProfile()
   if (ischeck.value === 0) return
   const selectedIds = store.value.items
-    .filter((item: any) => item.selected) // 筛选出打钩的 (根据你的实际字段 selected 或 isChecked 修改)
+    .filter((item: any) => item.selected) // 筛选出打钩的
     .map((item: any) => item.id) // 只提取 id 字段
-  console.log(selectedIds)
   const submitData: BorrowList = {
     book_ids: selectedIds,
   }
@@ -265,7 +262,6 @@ const handleCheckout = async () => {
 
 // 生命周期
 onMounted(() => {
-  console.log('书单组件已加载')
   fetchborrowCartData()
 })
 </script>

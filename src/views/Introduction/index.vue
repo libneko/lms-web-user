@@ -21,7 +21,6 @@ const num = ref(1)
 
 onMounted(async () => {
   const res = await bookApi(props.id)
-  console.log(res)
   if (res.code === 0) {
     ElMessage.error('该书籍已被借完或者下架')
     router.push('/')
@@ -33,8 +32,6 @@ onMounted(async () => {
 })
 
 const addToBorrowCart = async (book: BookData) => {
-  console.log(book)
-
   // 先检查该书是否已经在书单中
   try {
     const cartRes = await getborrowCartApi()
@@ -51,10 +48,7 @@ const addToBorrowCart = async (book: BookData) => {
   }
 
   const res = await addborrowCartApi(book)
-  console.log(res)
-  // 成功提示
   if (res.code !== 0) {
-    console.log('加入成功:', res)
     count.value = count.value + 1
     ElMessage.success('已加入书单')
   } else {
@@ -63,7 +57,6 @@ const addToBorrowCart = async (book: BookData) => {
 }
 
 const handleChange = (value: number) => {
-  console.log(value)
   borrowItem.value.number = value
 }
 </script>

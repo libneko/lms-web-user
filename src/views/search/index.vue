@@ -69,9 +69,7 @@ const fetchBooks = async () => {
     isSearched.value = true
     bookList.value = res.data.records
     total.value = res.data.total
-    ElMessage.success('搜索成功')
   } else {
-    ElMessage.error('未找到书籍')
     bookList.value = []
     total.value = 0
   }
