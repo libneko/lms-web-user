@@ -327,9 +327,7 @@ onMounted(() => {
             </el-col>
 
             <!-- 数量控制 -->
-            <el-col class="item-quantity" :span="3" style="margin-top: 20px">
-
-            </el-col>
+            <el-col class="item-quantity" :span="3" style="margin-top: 20px"> </el-col>
 
             <!-- 操作按钮 -->
             <el-col class="item-actions" :span="3">

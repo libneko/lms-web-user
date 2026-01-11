@@ -16,7 +16,6 @@ let borrowItem = ref<BookData>({
 let book_id: number
 const count = ref(1)
 
-
 const num = ref(1)
 
 onMounted(async () => {
@@ -29,6 +28,22 @@ onMounted(async () => {
 
 const addToBorrowCart = async (book: BookData) => {
   console.log(book)
+
+  // 先检查该书是否已经在借阅车中
+  try {
+    const cartRes = await getborrowCartApi()
+    if (cartRes.code === 1 && cartRes.data && Array.isArray(cartRes.data)) {
+      // 检查是否已存在相同书籍
+      const existingBook = cartRes.data.find((item) => item.book_id === book.book_id)
+      if (existingBook) {
+        ElMessage.warning('该书已在借阅车中，同种书一次只能借一本')
+        return
+      }
+    }
+  } catch (error) {
+    console.error('检查借阅车失败:', error)
+  }
+
   const res = await addborrowCartApi(book)
   console.log(res)
   // 成功提示
@@ -79,8 +94,12 @@ const handleChange = (value: number) => {
             <p>{{ book?.description }}</p>
           </div>
           <div class="books-buy">
-            
-            <el-button type="primary" :disabled="(book?.stock ?? 0) <= 0 || count > (book?.stock ?? 0)" @click="addToBorrowCart(borrowItem)">加入借阅车</el-button>
+            <el-button
+              type="primary"
+              :disabled="(book?.stock ?? 0) <= 0 || count > (book?.stock ?? 0)"
+              @click="addToBorrowCart(borrowItem)"
+              >加入借阅车</el-button
+            >
           </div>
         </div>
       </div>

@@ -176,7 +176,6 @@ export interface GetBorrowRecords {
   records: BorrowRecord[]
 }
 
-
 export interface BorrowResponse {
   id: number
   borrow_number: string
