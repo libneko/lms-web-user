@@ -25,7 +25,7 @@ const activeIndex = computed(() => route.path)
         <el-icon><ShoppingCart /></el-icon> 书单
       </el-menu-item>
       <el-menu-item index="/order">
-        <el-icon><Document /></el-icon> 图书管理
+        <el-icon><Document /></el-icon> 借阅历史
       </el-menu-item>
     </div>
   </el-menu>

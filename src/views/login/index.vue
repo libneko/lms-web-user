@@ -148,7 +148,12 @@ onBeforeUnmount(() => {
           </el-form-item>
 
           <el-form-item>
-            <el-input v-model="codeForm.code" placeholder="请输入验证码" maxlength="6">
+            <el-input
+              v-model="codeForm.code"
+              placeholder="请输入验证码"
+              maxlength="6"
+              @keyup.enter="login"
+            >
               <template #append>
                 <el-button id="captcha-button" :disabled="countdown > 0" @click="sendCode">
                   {{ countdown > 0 ? countdown + '秒后可再次获取' : '获取验证码' }}
@@ -164,7 +169,12 @@ onBeforeUnmount(() => {
           <p class="title">欢迎回来</p>
 
           <el-form-item>
-            <el-input v-model="pwdForm.email" placeholder="请输入邮箱" maxlength="20" />
+            <el-input
+              v-model="pwdForm.email"
+              placeholder="请输入邮箱"
+              maxlength="20"
+              @keyup.enter="login"
+            />
           </el-form-item>
 
           <el-form-item>
@@ -174,6 +184,7 @@ onBeforeUnmount(() => {
               class="password-input"
               placeholder="请输入密码"
               show-password
+              @keyup.enter="login"
             />
           </el-form-item>
         </el-form>

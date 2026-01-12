@@ -252,12 +252,7 @@ onMounted(async () => {
               <div
                 v-for="book in borrow.borrow_detail_list?.slice(1)"
                 :key="book.id"
-                style="
-                  display: flex;
-                  align-items: center;
-                  padding: 10px 0;
-                  border-bottom: 1px solid #f0f0f0;
-                "
+                class="book-item"
               >
                 <el-image
                   style="width: 50px; height: 60px; margin-right: 15px; border-radius: 2px"
@@ -398,36 +393,30 @@ onMounted(async () => {
   flex-direction: column;
 }
 
-/* 使用 :deep() 穿透修改 element-plus 内部样式 */
-.reverse-collapse {
-  /* 开启 flex 布局 */
-  display: flex;
-  /* 关键属性：垂直反转，让 Header 跑到 Wrap (内容) 的下面 */
-  flex-direction: column-reverse;
-}
-:deep(.el-collapse-item) {
-  /* 开启 flex 布局 */
-  display: flex;
-  /* 关键属性：垂直反转，让 Header 跑到 Wrap (内容) 的下面 */
-  flex-direction: column-reverse;
-}
-/* 优化边框样式（可选） */
-/* 因为反转后，标题在下面，原本标题的下边框可能看起来会怪，这里做一下微调 */
-.reverse-collapse {
-  /* 这里可以根据你的设计需求调整边框，
-     例如：因为标题跑下面去了，可能需要把原本底部的边框去掉，或者加一个上边框来分隔内容 */
-  border-bottom: none;
-  border-top: 1px solid #ebeef5; /* 只有展开时，内容和标题之间才需要分隔线 */
-}
+/* 折叠面板样式优化，适配深色模式 */
 :deep(.el-collapse-item__header) {
-  border-bottom: none;
-  border-top: 1px solid #ebeef5; /* 只有展开时，内容和标题之间才需要分隔线 */
-}
-/* 如果你希望内容部分没有底边框，可以把这行加上 */
-.reverse-collapse {
+  border-top: 1px solid var(--el-border-color);
   border-bottom: none;
 }
+
 :deep(.el-collapse-item__wrap) {
+  border-bottom: none;
+}
+
+:deep(.el-collapse-item__content) {
+  background-color: var(--el-bg-color);
+  padding: 10px;
+}
+
+/* 书籍项样式 */
+.book-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--el-border-color);
+}
+
+.book-item:last-child {
   border-bottom: none;
 }
 

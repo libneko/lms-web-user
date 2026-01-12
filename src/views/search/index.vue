@@ -319,6 +319,21 @@ onMounted(async () => {
     transform 0.3s;
 }
 
+/* 浅色模式下的输入框样式 */
+.search-input {
+  :deep(.el-input__inner) {
+    color: #303133;
+    &::placeholder {
+      color: #606266; /* 占位符颜色 - 深色，易于阅读 */
+    }
+  }
+
+  /* 左侧 Select 下拉框的文字颜色 */
+  :deep(.el-select .el-input__inner) {
+    color: #303133;
+  }
+}
+
 html.dark .search-input {
   :deep(.el-input__wrapper) {
     /* 深灰色半透明背景 */

@@ -18,12 +18,8 @@ import { getProfile } from '@/api/profile'
 const loading = ref(false)
 const dialogVisible = ref(false)
 const isSubmitting = ref(false)
-const itemTimers = new Map<number, any>()
 const ischeck = ref(0)
-const list = ref<BorrowList[]>([])
 const categoryMap = ref<Map<number, string>>(new Map())
-// 2. 用于存储全选操作的计时器
-let selectAllTimer: any = null
 
 const store = ref<Store>({
   id: 1,
@@ -42,10 +38,7 @@ const fetchborrowCartData = async () => {
       // 清空并重新填充数据
       const items = response.data
       const bookPromises = items.map((item) => bookApi(item.book_id))
-      const [books, categoriesRes] = await Promise.all([
-        Promise.all(bookPromises),
-        getCategories()
-      ])
+      const [books, categoriesRes] = await Promise.all([Promise.all(bookPromises), getCategories()])
 
       // 创建分类映射表
       if (categoriesRes.code === 1 && categoriesRes.data) {
@@ -114,29 +107,7 @@ const refreshStoreState = () => {
 
 const handleItemSelectChange = async (item: Product) => {
   updateStoreIndeterminate()
-  if (itemTimers.has(item.id)) {
-    clearTimeout(itemTimers.get(item.id))
-  }
-
-  const timer = setTimeout(async () => {
-    try {
-      console.log(`[防抖结束] 正在向后端同步书籍ID: ${item.id}, 状态: ${item.selected}`)
-
-      // TODO: 这里调用你的真实接口
-      // await updateCartItemApi({ id: item.cartId, selected: item.selected })
-
-      // 请求成功后，从 Map 中移除该计时器记录
-      itemTimers.delete(item.id)
-    } catch (error) {
-      console.error('同步失败', error)
-      // 如果后端报错，可能需要在这里把 item.selected 改回去，并提示用户
-    }
-  }, 1000) // <--- 设置延迟时间，这里是 1 秒
-
-  // 4. 将计时器存入 Map
-  itemTimers.set(item.id, timer)
 }
-// 3. 全选/取消全选
 const handleSelectAllChange = async (val: boolean) => {
   if (!store.value) return
 
@@ -144,26 +115,6 @@ const handleSelectAllChange = async (val: boolean) => {
     item.selected = val
   })
   updateStoreIndeterminate()
-  if (itemTimers.size > 0) {
-    itemTimers.forEach((timer) => clearTimeout(timer))
-    itemTimers.clear()
-  }
-  if (selectAllTimer) {
-    clearTimeout(selectAllTimer)
-  }
-  selectAllTimer = setTimeout(async () => {
-    try {
-      console.log(`[防抖结束] 正在向后端同步全选状态: ${val}`)
-
-      // TODO: 调用批量修改接口
-      // await updateCartBatchApi({ selected: val })
-    } catch (error) {
-      console.error('全选同步失败', error)
-      // 失败回滚逻辑...
-    } finally {
-      selectAllTimer = null
-    }
-  }, 1000) // <--- 延迟 1 秒
 }
 
 // 删除书籍（调用API）
@@ -262,7 +213,7 @@ const handleCheckout = async () => {
       dialogVisible.value = false
       location.reload()
     }, 1500)
-    ElMessage.success('借阅请求提交成功，后续可在图书管理中查看相关信息')
+    ElMessage.success('借阅请求提交成功，后续可在借阅历史中查看相关信息')
   } else {
     ElMessage.error(res.message || '请求提交失败，请重试')
     isSubmitting.value = false

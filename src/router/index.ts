@@ -51,7 +51,7 @@ const router = createRouter({
           path: '/order',
           name: 'borrow-management',
           component: BorrowView,
-          meta: { title: '图书管理' },
+          meta: { title: '借阅历史' },
         },
       ],
     },
