@@ -240,8 +240,9 @@ onMounted(async () => {
             v-model="activeNames"
             @change="handleChange"
             v-if="borrow.borrow_detail_list && borrow.borrow_detail_list.length > 1"
+            class="book-collapse"
           >
-            <el-collapse-item :name="borrow.id">
+            <el-collapse-item :name="borrow.id" class="book-collapse-item">
               <template #title>
                 <span style="margin-right: 8px">
                   {{ activeNames.includes(borrow.id) ? '收起' : '查看' }}其余
@@ -394,18 +395,30 @@ onMounted(async () => {
 }
 
 /* 折叠面板样式优化，适配深色模式 */
-:deep(.el-collapse-item__header) {
+/* 向上展开效果：标题在下方，内容在上方 */
+.book-collapse :deep(.el-collapse-item) {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.book-collapse :deep(.el-collapse-item__header) {
+  border-bottom: none;
   border-top: 1px solid var(--el-border-color);
-  border-bottom: none;
+  margin-top: 15px; /* 增加与上方内容的间距 */
+  padding-top: 15px;
 }
 
-:deep(.el-collapse-item__wrap) {
+.book-collapse :deep(.el-collapse-item__wrap) {
   border-bottom: none;
+  margin-bottom: 10px;
 }
 
-:deep(.el-collapse-item__content) {
+.book-collapse :deep(.el-collapse-item__content) {
   background-color: var(--el-bg-color);
-  padding: 10px;
+  padding: 15px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  margin-bottom: 10px;
 }
 
 /* 书籍项样式 */
