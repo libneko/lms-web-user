@@ -120,7 +120,6 @@ export interface ReceivePerson {
 export interface Product extends Book {
   quantity: number
   selected: boolean
-  specifications: string[]
   stock: number
   cartId: number
 }

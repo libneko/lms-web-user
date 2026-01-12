@@ -7,9 +7,10 @@ import {
   clearCartApi,
   SubmitOrderApi,
 } from '@/api/borrow-cart'
-import type { BorrowList, Product, Store } from '@/api/types'
+import type { BorrowList, Product, Store, Category } from '@/api/types'
 import { bookApi } from '@/api/introduction'
 import { openBook } from '@/api/meta'
+import { getCategories } from '@/api/home'
 import router from '@/router'
 import { getProfile } from '@/api/profile'
 
@@ -20,6 +21,7 @@ const isSubmitting = ref(false)
 const itemTimers = new Map<number, any>()
 const ischeck = ref(0)
 const list = ref<BorrowList[]>([])
+const categoryMap = ref<Map<number, string>>(new Map())
 // 2. 用于存储全选操作的计时器
 let selectAllTimer: any = null
 
@@ -40,7 +42,18 @@ const fetchborrowCartData = async () => {
       // 清空并重新填充数据
       const items = response.data
       const bookPromises = items.map((item) => bookApi(item.book_id))
-      const books = await Promise.all(bookPromises)
+      const [books, categoriesRes] = await Promise.all([
+        Promise.all(bookPromises),
+        getCategories()
+      ])
+
+      // 创建分类映射表
+      if (categoriesRes.code === 1 && categoriesRes.data) {
+        categoryMap.value = new Map<number, string>()
+        categoriesRes.data.forEach((cat: Category) => {
+          categoryMap.value.set(cat.id, cat.name)
+        })
+      }
 
       // 合并数据
       store.value.items = items.map((cartItem, idx) => {
@@ -50,9 +63,6 @@ const fetchborrowCartData = async () => {
           cartId: cartItem.id,
           quantity: cartItem.number,
           selected: Boolean(cartItem.selected), // 确保转为布尔值
-
-          // 其他前端字段
-          specifications: ['默认规格'],
           stock: bookDetail?.stock ?? 100,
         }
       })
@@ -320,8 +330,8 @@ onMounted(() => {
                 <div class="item-details">
                   <h4 class="product-name">{{ item.name }}</h4>
                   <div class="product-specs">
-                    <span class="spec" v-for="spec in item.specifications" :key="spec">
-                      {{ spec }}
+                    <span class="spec">
+                      {{ categoryMap.get(Number(item.category_id)) || '未分类' }}
                     </span>
                   </div>
                 </div>
