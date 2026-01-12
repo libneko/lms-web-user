@@ -27,6 +27,8 @@ request.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       ElMessage.error('登录超时，请重新登录')
+      // 清除本地存储的用户信息
+      localStorage.removeItem('login_user')
       // 跳转到登录界面
       router.push('/login')
     } else {

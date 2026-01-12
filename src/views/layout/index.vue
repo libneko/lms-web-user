@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LoginToken } from '@/api/types'
 import { Theme, setTheme as applyTheme } from '@/api/meta'
+import { getProfile } from '@/api/profile'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import NavMenu from '@/component/nav-menu.vue'
@@ -27,17 +28,6 @@ const handleStorageChange = (event: StorageEvent) => {
     currentTheme.value = (event.newValue as Theme) || Theme.SYSTEM
   }
 }
-
-onMounted(() => {
-  login_user.value = JSON.parse(localStorage.getItem('login_user')!) as LoginToken
-  document.addEventListener('click', handleClickOutside)
-  window.addEventListener('storage', handleStorageChange)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-  window.removeEventListener('storage', handleStorageChange)
-})
 
 // 退出登录
 const logout = () => {
@@ -71,8 +61,28 @@ const checkMobile = () => {
   }
 }
 
+// 验证用户状态
+const verifyUserStatus = async () => {
+  const storedUser = localStorage.getItem('login_user')
+  if (!storedUser) {
+    login_user.value = null
+    return
+  }
+
+  try {
+    const user = JSON.parse(storedUser) as LoginToken
+    // 尝试获取用户信息，验证token是否有效
+    await getProfile(user.id)
+    login_user.value = user
+  } catch (error) {
+    // 获取失败说明用户被封号/删除或token失效
+    login_user.value = null
+    localStorage.removeItem('login_user')
+  }
+}
+
 onMounted(() => {
-  login_user.value = JSON.parse(localStorage.getItem('login_user')!) as LoginToken
+  verifyUserStatus()
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('storage', handleStorageChange)
   checkMobile()
