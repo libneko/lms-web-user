@@ -120,6 +120,7 @@ onMounted(async () => {
         style="max-width: 80%; height: 55px"
         placeholder="输入书名或关键字进行搜索"
         class="input-with-select"
+        @keyup.enter="handleSearch"
       >
         <template #prefix>
           <el-select v-model="selectedCategoryId" placeholder="Select" style="width: 115px">
@@ -137,7 +138,10 @@ onMounted(async () => {
       </el-input>
     </div>
     <div class="result-list" v-if="isSearched">
-      <el-row class="book-lists" :gutter="20">
+      <div v-if="bookList.length === 0" class="no-result">
+        <el-empty description="没有找到相关图书" />
+      </div>
+      <el-row v-else class="book-lists" :gutter="20">
         <el-col
           v-for="(book, _index) in bookList"
           :key="book.id"
@@ -226,6 +230,12 @@ onMounted(async () => {
   gap: 20px;
   backdrop-filter: blur(12px); /* 毛玻璃核心 */
   background: rgba(255, 255, 255, 0.5); /* 半透明玻璃 */
+}
+
+.no-result {
+  width: 100%;
+  padding: 60px 0;
+  text-align: center;
 }
 .book-lists {
   padding: 2%;
