@@ -1,9 +1,15 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
+
 defineEmits(['menu-click'])
+
+const route = useRoute()
+const activeIndex = computed(() => route.path)
 </script>
 
 <template>
-  <el-menu router="true" class="nav-menu">
+  <el-menu router="true" class="nav-menu" :default-active="activeIndex">
     <!-- 首页菜单 -->
     <div class="title">
       <span>图书馆</span>
