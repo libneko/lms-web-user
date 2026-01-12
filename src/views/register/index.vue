@@ -71,7 +71,7 @@ const register = async () => {
     localStorage.setItem('login_user', JSON.stringify(result.data))
     router.push('/')
   } else {
-    ElMessage.error('传验证码或相关信息填写错误')
+    ElMessage.error(result.message || '注册失败')
   }
 }
 
