@@ -406,6 +406,8 @@ onMounted(async () => {
   border-top: 1px solid var(--el-border-color);
   margin-top: 15px; /* 增加与上方内容的间距 */
   padding-top: 15px;
+  text-align: center;
+  justify-content: center;
 }
 
 .book-collapse :deep(.el-collapse-item__wrap) {
