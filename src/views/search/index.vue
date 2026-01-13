@@ -224,11 +224,11 @@ onMounted(async () => {
   flex-wrap: wrap;
   gap: 20px;
   backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.6);
 }
 
 html.dark .result-list {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .no-result {
@@ -293,6 +293,15 @@ html.dark .no-result :deep(.el-empty__image svg) {
   line-clamp: 5;
   text-overflow: ellipsis;
   height: 7.5em;
+}
+
+html.dark .book-intro {
+  color: #cfd3dc;
+}
+
+html.dark .book-title,
+html.dark .book-title > p {
+  color: #e5eaf3;
 }
 
 .book-price {
