@@ -80,11 +80,11 @@ const handleFileChange = async (event: Event) => {
   const isLt2M = file.size / 1024 / 1024 < 2
   selectedFile.value = file
   if (!isJPGOrPNG) {
-    alert('只能上传 JPG/PNG 文件!')
+    ElMessage.error('只能上传 JPG/PNG 文件!')
     return
   }
   if (!isLt2M) {
-    alert('图片大小不能超过 2MB!')
+    ElMessage.error('图片大小不能超过 2MB!')
     return
   }
   form.avatar = URL.createObjectURL(file)
