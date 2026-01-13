@@ -78,6 +78,10 @@ const register = async () => {
 const submit = () => {
   formRef.value?.validate((valid) => {
     if (valid) {
+      if (!registerForm.value.code || !registerForm.value.code.trim()) {
+        ElMessage.warning('请输入验证码')
+        return
+      }
       registerForm.value.password = passwordForm.password
       register()
     } else {
