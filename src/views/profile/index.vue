@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { createConfirmPasswordValidator, validatePhone, validateEmail } from '@/api/meta'
+import {
+  usernameRules,
+  passwordRules,
+  phoneRules,
+  createConfirmPasswordRules,
+} from '@/utils/validators'
 import { getProfile, updateProfile, upload } from '@/api/profile'
 import type { LoginToken, User } from '@/api/types'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
@@ -26,33 +31,17 @@ const combinedFormData = computed(() => ({
 
 const rules = computed<FormRules>(() => {
   return {
-    username: [
-      { required: true, message: '请输入用户名', trigger: 'blur' },
-      { max: 30, message: '用户名不超过30个字符', trigger: 'blur' },
-    ],
+    username: usernameRules,
 
     // 2. 手机号：只有点击了编辑手机号才校验
-    phone: isPhoneEditing.value
-      ? [{ required: true, validator: validatePhone, trigger: 'blur' }]
-      : [],
+    phone: isPhoneEditing.value ? phoneRules : [],
 
     // 3. 密码：只有点击了编辑密码才校验
-    password: isPasswordEditing.value
-      ? [
-          { required: true, message: '请输入密码', trigger: 'blur' },
-          { min: 8, max: 20, message: '长度在 8 到 20 个字符', trigger: 'blur' },
-        ]
-      : [],
+    password: isPasswordEditing.value ? passwordRules : [],
 
     // 4. 确认密码：跟随密码编辑状态
     confirmPassword: isPasswordEditing.value
-      ? [
-          {
-            required: true,
-            validator: createConfirmPasswordValidator(() => passwordForm.password),
-            trigger: 'blur',
-          },
-        ]
+      ? createConfirmPasswordRules(() => passwordForm.password)
       : [],
   }
 })

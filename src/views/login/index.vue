@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { codeLoginApi, loginApi, sendCodeApi, sendEmailApi } from '@/api/login'
-import { isValidEmail } from '@/api/meta'
+import { isValidEmail } from '@/utils/validators'
 import type { ApiResponse, LoginToken } from '@/api/types'
 import { ElMessage } from 'element-plus'
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'

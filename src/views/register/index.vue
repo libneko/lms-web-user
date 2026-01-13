@@ -6,7 +6,13 @@ import { useRouter } from 'vue-router'
 import type { FormRules, FormInstance } from 'element-plus'
 import { registerApi } from '@/api/register'
 import AuthLayout from '@/component/auth-layout.vue'
-import { createConfirmPasswordValidator, isValidEmail } from '@/api/meta'
+import {
+  isValidEmail,
+  usernameRules,
+  passwordRules,
+  createConfirmPasswordRules,
+  emailRules,
+} from '@/utils/validators'
 import { sendCodeApi, sendEmailApi } from '@/api/login'
 
 const registerForm = ref<RegisterForm>({
@@ -108,17 +114,10 @@ const submit = () => {
 
 const rules = computed<FormRules>(() => {
   return {
-    password: [
-      { required: true, message: '请输入密码', trigger: 'blur' },
-      { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' },
-    ],
-    confirmPassword: [
-      {
-        required: true,
-        validator: createConfirmPasswordValidator(() => passwordForm.password),
-        trigger: 'blur',
-      },
-    ],
+    username: usernameRules,
+    email: emailRules,
+    password: passwordRules,
+    confirmPassword: createConfirmPasswordRules(() => passwordForm.password),
   }
 })
 
@@ -160,7 +159,12 @@ const login = () => {
       </el-form-item>
 
       <el-form-item label="用户名" prop="username">
-        <el-input v-model="registerForm.username" placeholder="输入用户名"></el-input>
+        <el-input
+          v-model="registerForm.username"
+          placeholder="输入用户名"
+          maxlength="30"
+          show-word-limit
+        ></el-input>
       </el-form-item>
 
       <el-form-item label="密码" prop="password">
