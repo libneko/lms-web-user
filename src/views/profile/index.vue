@@ -26,7 +26,10 @@ const combinedFormData = computed(() => ({
 
 const rules = computed<FormRules>(() => {
   return {
-    username: [{ max: 30, message: '用户名不超过30个字符', trigger: 'blur' }],
+    username: [
+      { required: true, message: '请输入用户名', trigger: 'blur' },
+      { max: 30, message: '用户名不超过30个字符', trigger: 'blur' },
+    ],
 
     // 2. 手机号：只有点击了编辑手机号才校验
     phone: isPhoneEditing.value
@@ -137,7 +140,7 @@ onMounted(async () => {
 
 const submit = async () => {
   if (!formRef.value) return
-  const fieldsToValidate = []
+  const fieldsToValidate = ['username']
   if (isPasswordEditing.value) {
     fieldsToValidate.push('password', 'confirmPassword')
   }
@@ -215,8 +218,13 @@ const save = async () => {
         label-width="80px"
         class="profile-form"
       >
-        <el-form-item label="用户名">
-          <el-input v-model="form.username" placeholder="请输入用户名" />
+        <el-form-item label="用户名" prop="username">
+          <el-input
+            v-model="form.username"
+            placeholder="请输入用户名"
+            maxlength="30"
+            show-word-limit
+          />
         </el-form-item>
 
         <el-form-item label="邮箱" class="profile-form">
