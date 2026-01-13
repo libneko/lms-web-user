@@ -26,6 +26,13 @@ const handleClickOutside = (event: MouseEvent) => {
 const handleStorageChange = (event: StorageEvent) => {
   if (event.key === 'theme') {
     currentTheme.value = (event.newValue as Theme) || Theme.SYSTEM
+  } else if (event.key === 'login_user') {
+    if (event.newValue) {
+      login_user.value = JSON.parse(event.newValue)
+    } else {
+      login_user.value = null
+      router.push('/login')
+    }
   }
 }
 

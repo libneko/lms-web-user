@@ -156,10 +156,6 @@ const save = async () => {
     }
     const res = await updateProfile(form)
     if (res.code === 1) {
-      ElMessage.success('用户信息已更新，页面即将刷新')
-      setTimeout(() => {
-        location.reload()
-      }, 1000)
       const storedStr = localStorage.getItem('login_user')
 
       if (storedStr) {
@@ -170,8 +166,18 @@ const save = async () => {
         storedUser.email = form.email
         storedUser.id = form.id
 
-        localStorage.setItem('login_user', JSON.stringify(storedUser))
+        const newValue = JSON.stringify(storedUser)
+        localStorage.setItem('login_user', newValue)
+
+        window.dispatchEvent(
+          new StorageEvent('storage', {
+            key: 'login_user',
+            newValue: newValue,
+            storageArea: localStorage,
+          }),
+        )
       }
+      ElMessage.success('用户信息已更新')
     } else {
       ElMessage.error(res.message || '更新失败')
     }
