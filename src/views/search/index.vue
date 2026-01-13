@@ -5,7 +5,6 @@ import { searchApi } from '@/api/search'
 import { getCategories, getRandomBooks } from '@/api/home'
 import type { Book, Category } from '@/api/types'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { openBook } from '@/api/meta.ts'
 
 const route = useRoute()
@@ -42,7 +41,6 @@ const fetchBooks = async () => {
   const size = Number(route.query.pageSize || 10)
 
   if (!name && categoryId === 0) {
-    // 随机推荐
     try {
       const res = await getRandomBooks(size)
       if (res.code === 1) {
@@ -56,7 +54,6 @@ const fetchBooks = async () => {
     return
   }
 
-  // 搜索结果
   const res = await searchApi({
     page,
     page_size: size,
@@ -87,7 +84,6 @@ const handlePageChange = (page: number) => {
   })
 }
 
-// 监听 URL 查询参数变化
 watch(
   () => route.query,
   () => {
@@ -171,7 +167,6 @@ onMounted(async () => {
       </el-row>
     </div>
 
-    <!-- 分页 -->
     <el-pagination
       v-if="isSearched && total > pageSize"
       background
@@ -221,15 +216,19 @@ onMounted(async () => {
 }
 
 .result-list {
-  width: 95%; /* 占满屏幕宽度 */
+  width: 95%;
   margin-top: 20px;
   margin-left: 2.5%;
   display: flex;
   border-radius: 40px;
   flex-wrap: wrap;
   gap: 20px;
-  backdrop-filter: blur(12px); /* 毛玻璃核心 */
-  background: rgba(255, 255, 255, 0.5); /* 半透明玻璃 */
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+html.dark .result-list {
+  background: rgba(0, 0, 0, 0.6);
 }
 
 .no-result {
@@ -237,23 +236,42 @@ onMounted(async () => {
   padding: 60px 0;
   text-align: center;
 }
+
+.no-result :deep(.el-empty__description) {
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+html.dark .no-result :deep(.el-empty__description) {
+  color: #e5eaf3;
+  font-weight: 600;
+}
+
+.no-result :deep(.el-empty__image svg) {
+  fill: #909399;
+}
+
+html.dark .no-result :deep(.el-empty__image svg) {
+  fill: #a8abb2;
+}
 .book-lists {
   padding: 2%;
 }
 
 .books {
-  cursor: pointer; /* 设置鼠标悬停时显示手型 */
+  cursor: pointer;
   padding: 2%;
-  transition: all 0.3s ease; /* 平滑过渡效果 */
-  border-radius: 8px; /* 可选，增加圆角效果 */
+  transition: all 0.3s ease;
+  border-radius: 8px;
 }
 .books:hover {
   background-color: rgba(180, 179, 179, 0.5);
-  transform: translateY(-5px); /* 向上浮动 5px */
+  transform: translateY(-5px);
 }
 
 .books:active {
-  transform: translateY(-2px); /* 点击时稍微减小浮动效果 */
+  transform: translateY(-2px);
 }
 
 .book-title {
@@ -265,25 +283,24 @@ onMounted(async () => {
   padding-bottom: 10px;
   font-size: 100%;
   color: rgb(68, 61, 61);
-  width: 100%; /* 记得给宽度，不然不会触发换行 */
-  white-space: normal; /* 允许换行 */
-  word-wrap: break-word; /* 自动换行 */
-  word-break: break-all; /* 单词或长字符串也强制换行 */
-
-  display: -webkit-box; /* 设置为 flexbox 样式 */
-  -webkit-box-orient: vertical; /* 设置为纵向排列 */
-  overflow: hidden; /* 隐藏超出容器的部分 */
-  line-clamp: 5; /* 限制最多显示 3 行 */
-  text-overflow: ellipsis; /* 超出部分用省略号表示 */
-  height: 7.5em; /* 3 行文本的固定高度（根据字体大小和行高调整） */
+  width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-clamp: 5;
+  text-overflow: ellipsis;
+  height: 7.5em;
 }
 
 .book-price {
   width: 100%;
   border-radius: 30px;
   color: rgb(229, 94, 52);
-  font-weight: bold; /* 粗体 */
-  font-style: italic; /* 斜体 */
+  font-weight: bold;
+  font-style: italic;
   font-size: 250%;
 }
 
@@ -319,16 +336,14 @@ onMounted(async () => {
     transform 0.3s;
 }
 
-/* 浅色模式下的输入框样式 */
 .search-input {
   :deep(.el-input__inner) {
     color: #303133;
     &::placeholder {
-      color: #606266; /* 占位符颜色 - 深色，易于阅读 */
+      color: #606266;
     }
   }
 
-  /* 左侧 Select 下拉框的文字颜色 */
   :deep(.el-select .el-input__inner) {
     color: #303133;
   }
@@ -336,26 +351,21 @@ onMounted(async () => {
 
 html.dark .search-input {
   :deep(.el-input__wrapper) {
-    /* 深灰色半透明背景 */
     background-color: rgba(30, 30, 30, 0.6);
-    /* 调整边框颜色，避免太亮 */
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
   }
 
-  /* 输入框文字颜色 */
   :deep(.el-input__inner) {
     color: #e5eaf3;
     &::placeholder {
-      color: #a3a6ad; /* 占位符颜色 */
+      color: #a3a6ad;
     }
   }
 
-  /* 左侧 Select 下拉框的文字颜色 */
   :deep(.el-select .el-input__inner) {
     color: #e5eaf3;
   }
 
-  /* 搜索图标按钮颜色适配 */
   :deep(.el-input-group__append) {
     background-color: rgba(30, 30, 30, 0.6);
     box-shadow:
