@@ -32,20 +32,36 @@ const passwordForm = reactive({
 })
 const sendCode = async () => {
   const email = registerForm.value.email.trim()
+  if (!email) {
+    ElMessage.warning('请输入邮箱')
+    return
+  }
   if (!isValidEmail(email)) {
     ElMessage.warning('请输入正确的邮箱地址')
     return
   }
-  captchaButton.value?.click()
+  document.getElementById('aliyun-captcha-trigger')?.click()
 }
 const captchaVerifyCallback = async (captchaVerifyParam: any) => {
   const res = await sendCodeApi(captchaVerifyParam)
   if (res.code === 1) {
-    await sendEmailApi(registerForm.value.email.trim())
-    ElMessage.success('校验成功，已发送邮箱验证')
-    startCountdown(60)
+    const emailRes = await sendEmailApi(registerForm.value.email.trim())
+    if (emailRes.code === 1) {
+      ElMessage.success('校验成功，已发送邮箱验证')
+      startCountdown(60)
+    } else {
+      ElMessage.error(emailRes.message || '发送邮件失败')
+      return {
+        captchaResult: true,
+        bizResult: false,
+      }
+    }
   } else {
     ElMessage.error('校验失败，重新校验')
+    return {
+      captchaResult: false,
+      bizResult: false,
+    }
   }
   return {
     captchaResult: true,
@@ -107,8 +123,6 @@ const rules = computed<FormRules>(() => {
 })
 
 onMounted(async () => {
-  captchaButton.value = document.getElementById('captcha-button')
-
   const script = document.createElement('script')
   script.src = 'https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js'
   script.async = true
@@ -117,7 +131,7 @@ onMounted(async () => {
       SceneId: import.meta.env.VITE_ALIYUN_CAPTCHA_SCENE_ID,
       prefix: import.meta.env.VITE_ALIYUN_CAPTCHA_PREFIX,
       mode: 'popup',
-      button: '#captcha-button',
+      button: '#aliyun-captcha-trigger',
       captchaVerifyCallback: captchaVerifyCallback,
       getInstance: getInstance,
       language: 'cn',
@@ -128,8 +142,6 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  captchaButton.value = null
-
   document.getElementById('aliyunCaptcha-mask')?.remove()
   document.getElementById('aliyunCaptcha-window-popup')?.remove()
 })
@@ -196,6 +208,7 @@ const login = () => {
     </el-form>
     <el-button type="primary" @click="submit">注 册</el-button>
     <el-link href="#" underline="never" @click="login">已有账号？去登录</el-link>
+    <div id="aliyun-captcha-trigger" style="display: none"></div>
   </AuthLayout>
 </template>
 
