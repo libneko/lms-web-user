@@ -44,7 +44,7 @@
 }
 
 .form-side {
-  width: 17%;
+  width: 22%;
   background-color: var(--el-bg-color);
   border: 1px solid var(--el-border-color);
   border-radius: 10px;

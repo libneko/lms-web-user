@@ -236,6 +236,7 @@ const login = () => {
   display: flex; /* 开启弹性布局 */
   width: 100%; /* 占满父容器宽度 */
   align-items: center; /* 垂直居中 */
+  gap: 10px;
 }
 
 /* 输入框 */
