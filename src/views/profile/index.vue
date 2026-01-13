@@ -202,7 +202,7 @@ const save = async () => {
       <input
         type="file"
         ref="fileInputRef"
-        accept="image/*"
+        accept="image/jpeg, image/png"
         style="display: none"
         @change="handleFileChange"
       />
