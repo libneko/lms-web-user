@@ -84,8 +84,8 @@ const startCountdown = (sec: number) => {
 const register = async () => {
   const result = await registerApi(registerForm.value)
   if (result.code === 1) {
-    localStorage.setItem('login_user', JSON.stringify(result.data))
-    router.push('/')
+    ElMessage.success('注册成功，请登录')
+    router.push('/login')
   } else {
     ElMessage.error(result.message || '注册失败')
   }
@@ -185,25 +185,13 @@ const login = () => {
         ></el-input>
       </el-form-item>
       <el-form-item label="验证码">
-        <div class="captcha-box">
-          <el-input
-            v-model="registerForm.code"
-            placeholder="请输入验证码"
-            maxlength="10"
-            class="captcha-input"
-          >
-          </el-input>
-          <el-button
-            id="captcha-button"
-            type="primary"
-            plain
-            :disabled="countdown > 0"
-            @click="sendCode"
-            class="captcha-btn"
-          >
-            {{ countdown > 0 ? countdown + '秒后可再次获取' : '获取验证码' }}
-          </el-button>
-        </div>
+        <el-input v-model="registerForm.code" placeholder="请输入验证码" maxlength="10">
+          <template #append>
+            <el-button :disabled="countdown > 0" @click="sendCode">
+              {{ countdown > 0 ? countdown + '秒后可再次获取' : '获取验证码' }}
+            </el-button>
+          </template>
+        </el-input>
       </el-form-item>
     </el-form>
     <el-button type="primary" @click="submit">注 册</el-button>
@@ -231,32 +219,5 @@ const login = () => {
   text-align: center;
   margin-bottom: 30px;
   font-weight: bold;
-}
-.captcha-box {
-  display: flex; /* 开启弹性布局 */
-  width: 100%; /* 占满父容器宽度 */
-  align-items: center; /* 垂直居中 */
-  gap: 10px;
-}
-
-/* 输入框 */
-.captcha-input {
-  flex: 1; /* 关键：让输入框自动收缩/拉伸以适应剩余空间 */
-  min-width: 30%; /* 防止 flex 子项在内容过多时无法收缩 */
-}
-
-/* 按钮 */
-.captcha-btn {
-  /* 保持按钮的默认大小，不要被压缩 */
-  flex-shrink: 0;
-  width: 50%;
-}
-
-/* 针对小屏幕（手机）的额外优化 */
-@media (max-width: 480px) {
-  .captcha-btn {
-    font-size: 12px; /* 字体变小 */
-    padding: 8px 8px; /* 内边距变小 */
-  }
 }
 </style>
