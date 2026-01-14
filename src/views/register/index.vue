@@ -15,10 +15,11 @@ import {
 } from '@/utils/validators'
 import { sendCodeApi, sendEmailApi } from '@/api/login'
 
-const registerForm = ref<RegisterForm>({
-  email: '',
-  password: '',
+const form = reactive({
   username: '',
+  password: '',
+  confirmPassword: '',
+  email: '',
   code: '',
 })
 const getInstance = (instance: any) => {
@@ -31,13 +32,8 @@ const countdown = ref(0)
 const formRef = ref<FormInstance>()
 const captchaButton = ref<HTMLElement | null>(null)
 let timer: number | undefined
-
-const passwordForm = reactive({
-  password: '',
-  confirmPassword: '',
-})
 const sendCode = async () => {
-  const email = registerForm.value.email.trim()
+  const email = form.email.trim()
   if (!email) {
     ElMessage.warning('请输入邮箱')
     return
@@ -51,7 +47,7 @@ const sendCode = async () => {
 const captchaVerifyCallback = async (captchaVerifyParam: any) => {
   const res = await sendCodeApi(captchaVerifyParam)
   if (res.code === 1) {
-    const emailRes = await sendEmailApi(registerForm.value.email.trim())
+    const emailRes = await sendEmailApi(form.email.trim())
     if (emailRes.code === 1) {
       ElMessage.success('校验成功，已发送邮箱验证')
       startCountdown(60)
@@ -88,7 +84,12 @@ const startCountdown = (sec: number) => {
   }, 1000)
 }
 const register = async () => {
-  const result = await registerApi(registerForm.value)
+  const result = await registerApi({
+    username: form.username,
+    password: form.password,
+    email: form.email,
+    code: form.code,
+  })
   if (result.code === 1) {
     ElMessage.success('注册成功，请登录')
     router.push('/login')
@@ -100,11 +101,10 @@ const register = async () => {
 const submit = () => {
   formRef.value?.validate((valid) => {
     if (valid) {
-      if (!registerForm.value.code || !registerForm.value.code.trim()) {
+      if (!form.code || !form.code.trim()) {
         ElMessage.warning('请输入验证码')
         return
       }
-      registerForm.value.password = passwordForm.password
       register()
     } else {
       ElMessage.error('填写数据有误，请按照提示重新填写')
@@ -117,7 +117,7 @@ const rules = computed<FormRules>(() => {
     username: usernameRules,
     email: emailRules,
     password: passwordRules,
-    confirmPassword: createConfirmPasswordRules(() => passwordForm.password),
+    confirmPassword: createConfirmPasswordRules(() => form.password),
   }
 })
 
@@ -152,15 +152,15 @@ const login = () => {
 
 <template>
   <AuthLayout>
-    <el-form :model="passwordForm" :rules="rules" ref="formRef" label-width="80px" class="form">
+    <el-form :model="form" :rules="rules" ref="formRef" label-width="80px" class="form">
       <p class="title">注册账户</p>
       <el-form-item label="注册邮箱" prop="email">
-        <el-input v-model="registerForm.email" placeholder="请输入邮箱"></el-input>
+        <el-input v-model="form.email" placeholder="请输入邮箱"></el-input>
       </el-form-item>
 
       <el-form-item label="用户名" prop="username">
         <el-input
-          v-model="registerForm.username"
+          v-model="form.username"
           placeholder="输入用户名"
           maxlength="30"
           show-word-limit
@@ -172,7 +172,7 @@ const login = () => {
           type="password"
           minlength="8"
           maxlength="20"
-          v-model="passwordForm.password"
+          v-model="form.password"
           class="password-input"
           placeholder="输入密码（8-20位）"
           show-password
@@ -182,14 +182,14 @@ const login = () => {
       <el-form-item label="确认密码" prop="confirmPassword">
         <el-input
           type="password"
-          v-model="passwordForm.confirmPassword"
+          v-model="form.confirmPassword"
           placeholder="请再输入密码"
           class="password-input"
           show-password
         ></el-input>
       </el-form-item>
       <el-form-item label="验证码">
-        <el-input v-model="registerForm.code" placeholder="请输入验证码" maxlength="10">
+        <el-input v-model="form.code" placeholder="请输入验证码" maxlength="10">
           <template #append>
             <el-button :disabled="countdown > 0" @click="sendCode">
               {{ countdown > 0 ? countdown + '秒后可再次获取' : '获取验证码' }}
