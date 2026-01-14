@@ -3,6 +3,7 @@ import { completeBorrowApi, getBorrowRecords, renewBorrowApi } from '@/api/borro
 import type { BorrowRecord, SendBorrowQuery } from '@/api/types'
 import { BorrowStatus, BorrowStatusMap } from '@/utils/status'
 import { ElMessage, type CollapseModelValue } from 'element-plus'
+import { Temporal } from '@js-temporal/polyfill'
 import { computed, onMounted, ref, watch } from 'vue'
 
 const dialogVisible = ref(false)
@@ -51,21 +52,24 @@ const checkRenewDisabled = (item: any) => {
     return true
   }
 
-  if (!item.endTime) return true // 防止字段不存在报错
+  // 确保后端字段存在
+  if (!item.due_date) return true
 
-  const deadline = new Date(item.due_date).getTime()
-  const now = Date.now()
+  try {
+    const plain = Temporal.PlainDateTime.from(item.due_date)
+    const zdt = plain.toZonedDateTime(Temporal.Now.timeZoneId())
+    const deadlineInstant = zdt.toInstant()
+    const nowInstant = Temporal.Now.instant()
 
-  const diff = deadline - now
+    const diffMs = deadlineInstant.epochMilliseconds - nowInstant.epochMilliseconds
+    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000
 
-  const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000
-
-  if (diff > sevenDaysInMs || diff < 0) {
+    if (diffMs > sevenDaysInMs || diffMs < 0) return true
+    return false
+  } catch (e) {
+    // 解析错误时禁用续借以防止异常
     return true
   }
-
-  // 否则，说明在 7 天之内且未过期，返回 false (启用/亮起)
-  return false
 }
 
 const formatTime = (timeStr: string | number | Date) => {
